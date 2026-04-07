@@ -1,0 +1,40 @@
+# Environment files
+.env
+.env.local
+.env.*.local
+
+
+# Python virtual environment
+backend/.venv/
+backend/venv/
+*.pyc
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Node modules
+node_modules/
+web/node_modules/
+
+# Build outputs
+dist/
+build/
+*.egg-info/
+.eggs/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
