@@ -1,0 +1,16 @@
+project-includes = [
+    "**/*.py*",
+    "**/*.ipynb",
+]
+
+# Disable automatic heuristics that treat 'src/' as a special import root
+# Without this, PyreFli would use src/ as the root instead of backend/
+disable-search-path-heuristics = true
+
+# Set the search path to the backend directory (where pyrefly.toml is located)
+# This allows imports like "from src.common..." to resolve correctly
+search-path = [".", "src"]
+
+# Point to the virtual environment for dependency resolution
+venv-path = ".venv"
+
