@@ -1,0 +1,186 @@
+x-mongodb-env: &mongodb-env
+  DB_HOST: ${DB_HOST:-localhost}
+  DB_PORT: ${DB_PORT:-27017}
+  DB_USER: ${DB_USER}
+  DB_PASSWORD: ${DB_PASSWORD}
+  DB_NAME: ${DB_NAME}
+
+
+services:
+  frontend-prod:
+    profiles: ["PROD"]
+    build:
+      context: ./frontend
+      dockerfile: containers/containerfiles/frontend.prod.containerfile
+    volumes:
+      - web-cache:/www
+
+  nginx:
+    profiles: ["PROD"]
+    image: nginx:alpine
+    volumes:
+      - web-cache:/usr/share/nginx/html:ro
+    ports:
+      - "80:80"
+    depends_on:
+      frontend-prod:
+        condition: service_completed_successfully
+
+  frontend-dev:
+    profiles: ["DEV"]
+    build:
+      context: ./frontend
+      dockerfile: containers/containerfiles/frontend.dev.containerfile
+    volumes:
+      - ./frontend:/app
+      - node_modules:/app/node_modules
+    expose:
+      - "5173"
+
+  api-gateway-prod:
+    profiles: ["PROD"]
+    build:
+      context: ./services
+      dockerfile: containers/containerfiles/service.prod.containerfile
+      args:
+        SERVICE_DIR: api-gateway
+    environment:
+      PORT: "8000"
+    expose:
+      - "8000"
+
+  api-gateway-dev:
+    profiles: ["DEV"]
+    build:
+      context: ./services
+      dockerfile: containers/containerfiles/service.dev.containerfile
+    environment:
+      PORT: "8000"
+    volumes:
+      - ./services/api-gateway:/app
+    expose:
+      - "8000"
+
+  appointments-service-prod:
+    profiles: ["PROD"]
+    build:
+      context: ./services
+      dockerfile: containers/containerfiles/service.prod.containerfile
+      args:
+        SERVICE_DIR: appointments-service
+    environment:
+      PORT: "8001"
+    expose:
+      - "8001"
+
+  appointments-service-dev:
+    profiles: ["DEV"]
+    build:
+      context: ./services
+      dockerfile: containers/containerfiles/service.dev.containerfile
+    environment:
+      PORT: "8001"
+    volumes:
+      - ./services/appointments-service:/app
+    expose:
+      - "8001"
+
+  auth-service-prod:
+    profiles: ["PROD"]
+    build:
+      context: ./services
+      dockerfile: containers/containerfiles/service.prod.containerfile
+      args:
+        SERVICE_DIR: auth-service
+    environment:
+      PORT: "8002"
+    expose:
+      - "8002"
+
+  auth-service-dev:
+    profiles: ["DEV"]
+    build:
+      context: ./services
+      dockerfile: containers/containerfiles/service.dev.containerfile
+    environment:
+      PORT: "8002"
+    volumes:
+      - ./services/auth-service:/app
+    expose:
+      - "8002"
+
+  billing-service-prod:
+    profiles: ["PROD"]
+    build:
+      context: ./services
+      dockerfile: containers/containerfiles/service.prod.containerfile
+      args:
+        SERVICE_DIR: billing-service
+    environment:
+      PORT: "8003"
+    expose:
+      - "8003"
+
+  billing-service-dev:
+    profiles: ["DEV"]
+    build:
+      context: ./services
+      dockerfile: containers/containerfiles/service.dev.containerfile
+    environment:
+      PORT: "8003"
+    volumes:
+      - ./services/billing-service:/app
+    expose:
+      - "8003"
+
+  patients-service-prod:
+    profiles: ["PROD"]
+    build:
+      context: ./services
+      dockerfile: containers/containerfiles/service.prod.containerfile
+      args:
+        SERVICE_DIR: patients-service
+    environment:
+      PORT: "8004"
+    expose:
+      - "8004"
+
+  patients-service-dev:
+    profiles: ["DEV"]
+    build:
+      context: ./services
+      dockerfile: containers/containerfiles/service.dev.containerfile
+    environment:
+      PORT: "8004"
+    volumes:
+      - ./services/patients-service:/app
+    expose:
+      - "8004"
+
+  database:
+    image: mongo:6.0.26-rc0-jammy
+    command: [
+      "mongod",
+      "--auth",
+      "--wiredTigerCacheSizeGB=4",
+      "--setParameter", "wiredTigerConcurrentReadTransactions=256",
+      "--setParameter", "wiredTigerConcurrentWriteTransactions=256"
+    ]
+    environment:
+      <<: *mongodb-env
+      MONGO_INITDB_DATABASE: ${DB_NAME}
+    volumes:
+      - ./containers/init/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    expose:
+      - "27017"
+
+
+volumes:
+  node_modules:
+    driver: local
+  vite_cache:
+    driver: local
+  npm_cache:
+    driver: local
+  web-cache:
+    driver: local
