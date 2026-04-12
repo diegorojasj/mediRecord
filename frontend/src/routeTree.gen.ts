@@ -8,28 +8,52 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from './router'
+import { Route as rootRouteImport } from './__root'
+import { Route as PatientIndexRouteRouteImport } from './patient/index.route'
 
-export interface FileRoutesByFullPath {}
-export interface FileRoutesByTo {}
+const PatientIndexRouteRoute = PatientIndexRouteRouteImport.update({
+  id: '/patient/',
+  path: '/patient',
+  getParentRoute: () => rootRouteImport,
+} as any)
+
+export interface FileRoutesByFullPath {
+  '/patient/': typeof PatientIndexRouteRoute
+}
+export interface FileRoutesByTo {
+  '/patient': typeof PatientIndexRouteRoute
+}
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/patient/': typeof PatientIndexRouteRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: never
+  fullPaths: '/patient/'
   fileRoutesByTo: FileRoutesByTo
-  to: never
-  id: '__root__'
+  to: '/patient'
+  id: '__root__' | '/patient/'
   fileRoutesById: FileRoutesById
 }
-export interface RootRouteChildren {}
-
-declare module '@tanstack/react-router' {
-  interface FileRoutesByPath {}
+export interface RootRouteChildren {
+  PatientIndexRouteRoute: typeof PatientIndexRouteRoute
 }
 
-const rootRouteChildren: RootRouteChildren = {}
+declare module '@tanstack/react-router' {
+  interface FileRoutesByPath {
+    '/patient/': {
+      id: '/patient/'
+      path: '/patient'
+      fullPath: '/patient/'
+      preLoaderRoute: typeof PatientIndexRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+  }
+}
+
+const rootRouteChildren: RootRouteChildren = {
+  PatientIndexRouteRoute: PatientIndexRouteRoute,
+}
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()

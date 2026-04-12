@@ -9,7 +9,11 @@ import tailwindcss from '@tailwindcss/vite'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
-    tanstackRouter(),
+    tanstackRouter({
+      routesDirectory: './src', 
+      routeFileIgnorePrefix: '-',
+      routeFileIgnorePattern: '^(?!__root\\.tsx$)(?!.*\\.route\\.tsx$).*\\.(tsx|ts|js|jsx)$',
+    }),
     react(),
     babel({ presets: [reactCompilerPreset()] }),
     tailwindcss(),
