@@ -9,50 +9,104 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './__root'
-import { Route as PatientIndexRouteRouteImport } from './patient/index.route'
+import { Route as IndexRouteRouteImport } from './index.route'
+import { Route as PatientsIndexRouteRouteImport } from './patients/index.route'
+import { Route as BillingIndexRouteRouteImport } from './billing/index.route'
+import { Route as AppointmentsIndexRouteRouteImport } from './appointments/index.route'
 
-const PatientIndexRouteRoute = PatientIndexRouteRouteImport.update({
-  id: '/patient/',
-  path: '/patient',
+const IndexRouteRoute = IndexRouteRouteImport.update({
+  id: '/',
+  path: '',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PatientsIndexRouteRoute = PatientsIndexRouteRouteImport.update({
+  id: '/patients/',
+  path: '/patients',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BillingIndexRouteRoute = BillingIndexRouteRouteImport.update({
+  id: '/billing/',
+  path: '/billing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppointmentsIndexRouteRoute = AppointmentsIndexRouteRouteImport.update({
+  id: '/appointments/',
+  path: '/appointments',
   getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/patient/': typeof PatientIndexRouteRoute
+  '/': typeof IndexRouteRoute
+  '/appointments/': typeof AppointmentsIndexRouteRoute
+  '/billing/': typeof BillingIndexRouteRoute
+  '/patients/': typeof PatientsIndexRouteRoute
 }
 export interface FileRoutesByTo {
-  '/patient': typeof PatientIndexRouteRoute
+  '/': typeof IndexRouteRoute
+  '/appointments': typeof AppointmentsIndexRouteRoute
+  '/billing': typeof BillingIndexRouteRoute
+  '/patients': typeof PatientsIndexRouteRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/patient/': typeof PatientIndexRouteRoute
+  '/': typeof IndexRouteRoute
+  '/appointments/': typeof AppointmentsIndexRouteRoute
+  '/billing/': typeof BillingIndexRouteRoute
+  '/patients/': typeof PatientsIndexRouteRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/patient/'
+  fullPaths: '/' | '/appointments/' | '/billing/' | '/patients/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/patient'
-  id: '__root__' | '/patient/'
+  to: '/' | '/appointments' | '/billing' | '/patients'
+  id: '__root__' | '/' | '/appointments/' | '/billing/' | '/patients/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  PatientIndexRouteRoute: typeof PatientIndexRouteRoute
+  IndexRouteRoute: typeof IndexRouteRoute
+  AppointmentsIndexRouteRoute: typeof AppointmentsIndexRouteRoute
+  BillingIndexRouteRoute: typeof BillingIndexRouteRoute
+  PatientsIndexRouteRoute: typeof PatientsIndexRouteRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/patient/': {
-      id: '/patient/'
-      path: '/patient'
-      fullPath: '/patient/'
-      preLoaderRoute: typeof PatientIndexRouteRouteImport
+    '/': {
+      id: '/'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/patients/': {
+      id: '/patients/'
+      path: '/patients'
+      fullPath: '/patients/'
+      preLoaderRoute: typeof PatientsIndexRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/billing/': {
+      id: '/billing/'
+      path: '/billing'
+      fullPath: '/billing/'
+      preLoaderRoute: typeof BillingIndexRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/appointments/': {
+      id: '/appointments/'
+      path: '/appointments'
+      fullPath: '/appointments/'
+      preLoaderRoute: typeof AppointmentsIndexRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
-  PatientIndexRouteRoute: PatientIndexRouteRoute,
+  IndexRouteRoute: IndexRouteRoute,
+  AppointmentsIndexRouteRoute: AppointmentsIndexRouteRoute,
+  BillingIndexRouteRoute: BillingIndexRouteRoute,
+  PatientsIndexRouteRoute: PatientsIndexRouteRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

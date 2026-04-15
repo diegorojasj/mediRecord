@@ -1,8 +1,10 @@
+import type { ReactNode } from "react"
 import AppSideBar from "./components/appSidebar"
 
-const Layout = () => {
+const Layout = ({ children }: { children: ReactNode }) => {
     return <>
         <AppSideBar />
+        {children}
     </>
 }
 
