@@ -252,6 +252,16 @@ code {
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+@keyframes accordion-down {
+  from { height: 0; overflow: hidden; }
+  to { height: var(--radix-accordion-content-height); overflow: hidden; }
+}
+
+@keyframes accordion-up {
+  from { height: var(--radix-accordion-content-height); overflow: hidden; }
+  to { height: 0; overflow: hidden; }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;}
