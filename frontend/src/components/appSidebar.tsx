@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
+    Activity01Icon,
     DashboardSquare01Icon,
     UserIcon,
     Calendar01Icon,
@@ -44,8 +45,21 @@ const navItems = [
 
 const AppSideBar = () => {
     return (
-        <Sidebar>
-            <SidebarHeader />
+        <Sidebar collapsible="icon" variant="inset" >
+            <SidebarHeader>
+                <SidebarMenu>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton size="lg" asChild>
+                            <Link to="/">
+                                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                                    <HugeiconsIcon icon={Activity01Icon} size={16} />
+                                </div>
+                                <span className="font-semibold">MediRecord</span>
+                            </Link>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                </SidebarMenu>
+            </SidebarHeader>
             <SidebarContent>
                 <SidebarGroup>
                     <SidebarGroupLabel>Menu</SidebarGroupLabel>
