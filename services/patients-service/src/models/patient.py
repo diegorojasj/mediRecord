@@ -18,6 +18,7 @@ from .enums import (
 
 class Patient(TimestampedDocument):
     # Identification
+    photo_url: Optional[str] = None
     record_number: Annotated[str, Indexed(unique=True)]   # e.g. "EXP-2026-00123"
     national_id: Annotated[str, Indexed(unique=True)]    # Identity document number
     national_id_issued_in: str
