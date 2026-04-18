@@ -1,0 +1,40 @@
+export type FormState = {
+  // Identification
+  national_id: string
+  national_id_issued_in: string
+  tax_id: string
+  // Personal
+  first_name: string
+  first_surname: string
+  second_surname: string
+  date_of_birth: string
+  sex: string
+  marital_status: string
+  occupation: string
+  education_level: string
+  blood_group: string
+  primary_language: string
+  indigenous_community: string
+  // Contact
+  phone: string
+  alternative_phone: string
+  email: string
+  // Address
+  street: string
+  address_number: string
+  zone_neighborhood: string
+  city: string
+  state_province: string
+  reference: string
+  country: string
+  // Emergency contact
+  emergency_name: string
+  emergency_relationship: string
+  emergency_phone: string
+  // Insurance
+  insurance_type: string
+  insurance_affiliation_number: string
+  insurance_provider: string
+  // Admin
+  administrative_notes: string
+}

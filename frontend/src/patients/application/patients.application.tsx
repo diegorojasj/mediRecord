@@ -1,5 +1,7 @@
 import H4 from "@/components/h4"
 import { ExpandableCardList } from "@/components/expandable-card-list"
+import SearchInput from "@/components/search-input"
+import CreationFormApplication from "./creationForm.application"
 
 type PatientStatus = "Critical" | "Stable" | "Monitoring"
 
@@ -82,7 +84,14 @@ const PatientsApplication = () => {
     return (
         <div className="p-6 space-y-4">
             <H4>Patients</H4>
-
+            <div className="flex">
+                <div className="flex-1" >
+                    <SearchInput />
+                </div>
+                <div className="flex-shrink-0 flex items-end">
+                    <CreationFormApplication />
+                </div>
+            </div>
             <ExpandableCardList
                 items={MOCK_PATIENTS}
                 getKey={(p) => p.id}
