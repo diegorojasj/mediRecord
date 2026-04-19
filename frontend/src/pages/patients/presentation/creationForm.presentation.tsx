@@ -1,13 +1,10 @@
 import { Button } from "@/components/ui/button"
 import {
-  Sheet,
   SheetClose,
-  SheetContent,
   SheetDescription,
   SheetFooter,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
 } from "@/components/ui/sheet"
 import {
   Field,
@@ -19,19 +16,13 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { BLOOD_GROUP_OPTIONS, EDUCATION_LEVEL_OPTIONS, INSURANCE_TYPE_OPTIONS, MARITAL_STATUS_OPTIONS, PRIMARY_LANGUAGE_OPTIONS, SEX_OPTIONS } from "@/patients/presentation/creationForm/creationForm_enums"
+import { BLOOD_GROUP_OPTIONS, EDUCATION_LEVEL_OPTIONS, INSURANCE_TYPE_OPTIONS, MARITAL_STATUS_OPTIONS, PRIMARY_LANGUAGE_OPTIONS, SEX_OPTIONS } from "@/pages/patients/presentation/creationForm/creationForm_enums"
 import { SelectField } from "@/components/selectField"
 import { type ChangeEvent, type SyntheticEvent } from "react"
 import type { FormState } from "./creationForm/creationForm_types"
 
 const CreationFormPresentation = ({ form, set, setSelect, onSubmit } : { form: FormState, set: (key: keyof FormState) => (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void; setSelect: (key: keyof FormState) => (value: string) => void; onSubmit: (e: SyntheticEvent<HTMLFormElement>) => void }) => {
-
-    return <Sheet>
-      <SheetTrigger asChild>
-        <Button variant="outline">Register Patient</Button>
-      </SheetTrigger>
-      <SheetContent className="flex w-full flex-col overflow-hidden sm:max-w-xl md:max-w-2xl">
-        <form onSubmit={onSubmit} className="flex h-full flex-col">
+  return <form onSubmit={onSubmit} className="flex h-full flex-col">
           <SheetHeader>
             <SheetTitle className="!text-gray-900 dark:!text-gray-50">Register Patient</SheetTitle>
             <SheetDescription>Fill in the patient details below.</SheetDescription>
@@ -233,8 +224,6 @@ const CreationFormPresentation = ({ form, set, setSelect, onSubmit } : { form: F
             <Button type="submit">Register</Button>
           </SheetFooter>
         </form>
-      </SheetContent>
-    </Sheet>
 }
 
 export default CreationFormPresentation

@@ -8,9 +8,10 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   plugins: [
     tanstackRouter({
-      routesDirectory: './src', 
+      autoCodeSplitting: true,
+      routesDirectory: './src/pages',
       routeFileIgnorePrefix: '-',
-      routeFileIgnorePattern: '^(?!__root\\.tsx$)(?!.*\\.route\\.tsx$).*\\.(tsx|ts|js|jsx)$',
+      routeFileIgnorePattern: '^(?!__root\\.tsx$)(?!.*\\.route\\.tsx$)(?!.*\\.lazy\\.tsx$).*\\.(tsx|ts|js|jsx)$',
     }),
     react(),
     babel({ presets: [reactCompilerPreset()] }),

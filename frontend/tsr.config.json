@@ -1,6 +1,6 @@
 {
-  "routesDirectory": "./src",
+  "routesDirectory": "./src/pages",
   "generatedRouteTree": "./src/routeTree.gen.ts",
   "routeFileIgnorePrefix": "-",
-  "routeFileIgnorePattern": "^(?!__root\\.tsx$)(?!.*\\.route\\.tsx$).*\\.(tsx|ts|js|jsx)$"
+  "routeFileIgnorePattern": "^(?!__root\\.tsx$)(?!.*\\.route\\.tsx$)(?!.*\\.lazy\\.tsx$).*\\.(tsx|ts|js|jsx)$"
 }
