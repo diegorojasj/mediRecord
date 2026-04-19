@@ -122,7 +122,7 @@ function patientToFormState(p: Patient): FormState {
 
 function SectionLabel({ children }: { children: string }) {
     return (
-        <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        <p className="mb-0.5 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
             {children}
         </p>
     )
@@ -131,9 +131,9 @@ function SectionLabel({ children }: { children: string }) {
 function DetailRow({ label, value }: { label: string; value?: string }) {
     if (!value) return null
     return (
-        <div className="flex flex-col gap-0.5">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>
-            <span className="text-xs font-medium text-foreground">{value}</span>
+        <div className="flex items-baseline gap-1 min-w-0">
+            <span className="shrink-0 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">{label}:</span>
+            <span className="truncate text-[11px] font-medium text-foreground">{value}</span>
         </div>
     )
 }
@@ -186,76 +186,67 @@ const PatientsPresentation = () => {
                 )}
 
                 renderDetail={(p) => (
-                    <div className="relative space-y-4">
+                    <div className="relative">
                         <div className="absolute -top-1 right-0">
                             <button
                                 type="button"
-                                className="inline-flex items-center justify-center rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                                className="inline-flex items-center justify-center rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
                                 onClick={() => onEdit(p)}
                             >
-                                <HugeiconsIcon icon={PencilEdit01Icon} size={14} strokeWidth={2} />
+                                <HugeiconsIcon icon={PencilEdit01Icon} size={12} strokeWidth={2} />
                             </button>
                         </div>
-                        <div>
-                            <SectionLabel>Personal</SectionLabel>
-                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                                <DetailRow label="Date of Birth" value={new Date(p.date_of_birth).toLocaleDateString()} />
-                                <DetailRow label="National ID" value={`${p.national_id} (${p.national_id_issued_in})`} />
-                                <DetailRow label="Marital Status" value={p.marital_status} />
-                                <DetailRow label="Occupation" value={p.occupation} />
-                                <DetailRow label="Education" value={p.education_level} />
-                                <DetailRow label="Language" value={p.primary_language} />
-                                <DetailRow label="Community" value={p.indigenous_community} />
-                                <DetailRow label="Tax ID" value={p.tax_id} />
+                        <div className="flex gap-4 flex-wrap">
+                            <div className="min-w-[140px] flex-1">
+                                <SectionLabel>Personal</SectionLabel>
+                                <div className="flex flex-col gap-px">
+                                    <DetailRow label="DOB" value={new Date(p.date_of_birth).toLocaleDateString()} />
+                                    <DetailRow label="ID" value={`${p.national_id} (${p.national_id_issued_in})`} />
+                                    <DetailRow label="Status" value={p.marital_status} />
+                                    <DetailRow label="Occupation" value={p.occupation} />
+                                    <DetailRow label="Education" value={p.education_level} />
+                                    <DetailRow label="Language" value={p.primary_language} />
+                                    <DetailRow label="Community" value={p.indigenous_community} />
+                                    <DetailRow label="Tax ID" value={p.tax_id} />
+                                </div>
+                            </div>
+
+                            <div className="min-w-[140px] flex-1">
+                                <SectionLabel>Contact</SectionLabel>
+                                <div className="flex flex-col gap-px">
+                                    <DetailRow label="Phone" value={p.phone} />
+                                    <DetailRow label="Alt." value={p.alternative_phone} />
+                                    <DetailRow label="Email" value={p.email} />
+                                    <DetailRow label="Address" value={[p.address.street, p.address.number, p.address.city, p.address.state_province].filter(Boolean).join(", ")} />
+                                    <DetailRow label="Zone" value={p.address.zone_neighborhood} />
+                                    <DetailRow label="Ref." value={p.address.reference} />
+                                </div>
+                            </div>
+
+                            <div className="min-w-[120px] flex-1">
+                                <SectionLabel>Emergency</SectionLabel>
+                                {p.emergency_contact ? (
+                                    <div className="flex flex-col gap-px">
+                                        <DetailRow label="Name" value={p.emergency_contact.name} />
+                                        <DetailRow label="Rel." value={p.emergency_contact.relationship} />
+                                        <DetailRow label="Phone" value={p.emergency_contact.phone} />
+                                    </div>
+                                ) : (
+                                    <p className="text-[11px] text-muted-foreground">—</p>
+                                )}
+
+                                <p className="mb-0.5 mt-2 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Insurance</p>
+                                {p.health_insurance ? (
+                                    <div className="flex flex-col gap-px">
+                                        <DetailRow label="Type" value={p.health_insurance.type} />
+                                        <DetailRow label="Affil." value={p.health_insurance.affiliation_number} />
+                                        <DetailRow label="Provider" value={p.health_insurance.provider} />
+                                    </div>
+                                ) : (
+                                    <p className="text-[11px] text-muted-foreground">—</p>
+                                )}
                             </div>
                         </div>
-
-                        <div>
-                            <SectionLabel>Contact</SectionLabel>
-                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                                <DetailRow label="Phone" value={p.phone} />
-                                <DetailRow label="Alt. Phone" value={p.alternative_phone} />
-                                <DetailRow label="Email" value={p.email} />
-                                <DetailRow label="Address" value={[p.address.street, p.address.number, p.address.city, p.address.state_province, p.address.country].filter(Boolean).join(", ")} />
-                                <DetailRow label="Zone" value={p.address.zone_neighborhood} />
-                                <DetailRow label="Reference" value={p.address.reference} />
-                            </div>
-                        </div>
-
-                        <div>
-                            <SectionLabel>Emergency Contact</SectionLabel>
-                            {p.emergency_contact ? (
-                                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                                    <DetailRow label="Name" value={p.emergency_contact.name} />
-                                    <DetailRow label="Relationship" value={p.emergency_contact.relationship} />
-                                    <DetailRow label="Phone" value={p.emergency_contact.phone} />
-                                </div>
-                            ) : (
-                                <p className="text-xs text-muted-foreground">Not registered.</p>
-                            )}
-                        </div>
-
-                        <div>
-                            <SectionLabel>Health Insurance</SectionLabel>
-                            {p.health_insurance ? (
-                                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                                    <DetailRow label="Type" value={p.health_insurance.type} />
-                                    <DetailRow label="Affiliation #" value={p.health_insurance.affiliation_number} />
-                                    <DetailRow label="Provider" value={p.health_insurance.provider} />
-                                </div>
-                            ) : (
-                                <p className="text-xs text-muted-foreground">Not registered.</p>
-                            )}
-                        </div>
-
-                        <div>
-                            <SectionLabel>Administrative Notes</SectionLabel>
-                            {p.administrative_notes
-                                ? <p className="text-xs text-foreground">{p.administrative_notes}</p>
-                                : <p className="text-xs text-muted-foreground">No notes.</p>
-                            }
-                        </div>
-
                     </div>
                 )}
             />
