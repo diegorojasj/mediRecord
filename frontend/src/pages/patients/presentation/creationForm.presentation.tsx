@@ -16,7 +16,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { BLOOD_GROUP_OPTIONS, EDUCATION_LEVEL_OPTIONS, INSURANCE_TYPE_OPTIONS, MARITAL_STATUS_OPTIONS, PRIMARY_LANGUAGE_OPTIONS, SEX_OPTIONS } from "@/pages/patients/presentation/creationForm/creationForm_enums"
+import { BLOOD_GROUP_OPTIONS, EDUCATION_LEVEL_OPTIONS, INSURANCE_TYPE_OPTIONS, MARITAL_STATUS_OPTIONS, PRIMARY_LANGUAGE_OPTIONS, SEX_OPTIONS } from "@/consts/const_patients"
 import { SelectField } from "@/components/selectField"
 import { type ChangeEvent, type SyntheticEvent } from "react"
 import type { FormState } from "./creationForm/creationForm_types"

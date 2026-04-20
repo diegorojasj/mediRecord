@@ -8,7 +8,9 @@ import { SEX_LABEL } from "@/consts/const_patients"
 import { avatarColor } from "@/lib/utils"
 import { useState } from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { PencilEdit01Icon } from "@hugeicons/core-free-icons"
+import { PencilEdit01Icon, FilterAddIcon, FilterRemoveIcon } from "@hugeicons/core-free-icons"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import AdvancedFilter, { type FilterValues } from "./advancedFilter"
 
 const patients_example: Patient[] = [
     {
@@ -138,8 +140,44 @@ function DetailRow({ label, value }: { label: string; value?: string }) {
     )
 }
 
+const INITIAL_ADVANCED: FilterValues = {
+    document: "", sex: "", dateOfBirth: "", bloodGroup: "",
+    maritalStatus: "", education: "", occupation: "", language: "",
+    phone: "", email: "", city: "", stateProvince: "", country: "",
+    recordNumber: "", insuranceType: "", affiliationNumber: "", insuranceProvider: "",
+}
+
+function matchesFilters(p: Patient, search: string, adv: FilterValues): boolean {
+    if (search && !fullName(p).toLowerCase().includes(search.toLowerCase())) return false
+    if (adv.document && !p.national_id.includes(adv.document)) return false
+    if (adv.sex && p.sex !== adv.sex) return false
+    if (adv.dateOfBirth && p.date_of_birth !== adv.dateOfBirth) return false
+    if (adv.bloodGroup && p.blood_group !== adv.bloodGroup) return false
+    if (adv.maritalStatus && p.marital_status !== adv.maritalStatus) return false
+    if (adv.education && p.education_level !== adv.education) return false
+    if (adv.occupation && !p.occupation?.toLowerCase().includes(adv.occupation.toLowerCase())) return false
+    if (adv.language && p.primary_language !== adv.language) return false
+    if (adv.phone && !p.phone?.includes(adv.phone)) return false
+    if (adv.email && !p.email?.toLowerCase().includes(adv.email.toLowerCase())) return false
+    if (adv.city && !p.address.city.toLowerCase().includes(adv.city.toLowerCase())) return false
+    if (adv.stateProvince && !p.address.state_province.toLowerCase().includes(adv.stateProvince.toLowerCase())) return false
+    if (adv.country && !p.address.country.toLowerCase().includes(adv.country.toLowerCase())) return false
+    if (adv.recordNumber && !p.record_number.includes(adv.recordNumber)) return false
+    if (adv.insuranceType && p.health_insurance?.type !== adv.insuranceType) return false
+    if (adv.affiliationNumber && !p.health_insurance?.affiliation_number?.includes(adv.affiliationNumber)) return false
+    if (adv.insuranceProvider && !p.health_insurance?.provider?.toLowerCase().includes(adv.insuranceProvider.toLowerCase())) return false
+    return true
+}
+
 const PatientsPresentation = () => {
     const [patientSelected, setPatientSelected] = useState<FormState | undefined>()
+    const [advancedFilterOpen, setAdvancedFilterOpen] = useState(false)
+    const [advancedFilterUsed, setAdvancedFilterUsed] = useState(false)
+    const [clearSignal, setClearSignal] = useState(0)
+    const [searchQuery, setSearchQuery] = useState("")
+    const [advancedFilters, setAdvancedFilters] = useState<FilterValues>(INITIAL_ADVANCED)
+
+    const filteredPatients = patients_example.filter(p => matchesFilters(p, searchQuery, advancedFilters))
 
     const onEdit = (patient: Patient) => {
         setPatientSelected(patientToFormState(patient))
@@ -149,20 +187,57 @@ const PatientsPresentation = () => {
         setPatientSelected(undefined)
     }
 
+    const onClick_AdvancedFilter = () => {
+        setAdvancedFilterOpen(!advancedFilterOpen)
+    }
+
     return (
         <div className="p-6 space-y-4">
             <H4>Patients</H4>
             <div className="flex gap-2">
-                <div className="flex-1">
-                    <SearchInput />
+                <div className="flex flex-1">
+                    <SearchInput value={searchQuery} onChange={setSearchQuery} />
+                    <div className="flex ml-1 items-end gap-0.5">
+                        <Tooltip delayDuration={800}>
+                            <TooltipTrigger>
+                                <button
+                                    type="button"
+                                    className="inline-flex items-center justify-center rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                                    onClick={onClick_AdvancedFilter}
+                                >
+                                    <HugeiconsIcon icon={FilterAddIcon} size={20} strokeWidth={2} />
+                                </button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Advanced filter</p>
+                            </TooltipContent>
+                        </Tooltip>
+                        {advancedFilterUsed && (
+                            <Tooltip delayDuration={800}>
+                                <TooltipTrigger>
+                                    <button
+                                        type="button"
+                                        className="inline-flex items-center justify-center rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-destructive transition-colors"
+                                        onClick={() => setClearSignal(s => s + 1)}
+                                    >
+                                        <HugeiconsIcon icon={FilterRemoveIcon} size={20} strokeWidth={2} />
+                                    </button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Clear filters</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        )}
+                    </div>
                 </div>
                 <div className="flex-shrink-0 flex items-end">
                     <CreationFormApplication initialData={patientSelected} onClose={onClose} />
                 </div>
             </div>
+            <AdvancedFilter open={advancedFilterOpen} clearSignal={clearSignal} onUsedChange={setAdvancedFilterUsed} onFilterChange={setAdvancedFilters} />
 
             <ExpandableCardList
-                items={patients_example}
+                items={filteredPatients}
                 getKey={(p) => p.id}
 
                 renderRow={(p) => (
