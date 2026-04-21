@@ -1,0 +1,29 @@
+from fastapi import Request
+from ..models.patient import Patient
+
+async def get_patients(id: str | None = None):
+    if id:
+        return await Patient.find_one(Patient.id == id)
+    return await Patient.find_all().to_list()
+
+async def create_patient(request: Request):
+    json_data = await request.json()
+    patient = Patient(**json_data)
+    await patient.insert()
+    return patient
+
+async def update_patient(request: Request, id: str):
+    json_data = await request.json()
+    patient = await Patient.find_one(Patient.id == id)
+    if patient:
+        patient.name = json_data.get("name", patient.name)
+        patient.email = json_data.get("email", patient.email)
+        patient.phone = json_data.get("phone", patient.phone)
+        await patient.save()
+    return patient
+
+async def delete_patient(id: str):
+    patient = await Patient.find_one(Patient.id == id)
+    if patient:
+        await patient.delete()
+    return patient
