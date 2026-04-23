@@ -7,13 +7,7 @@ from pymongo import ASCENDING, DESCENDING, TEXT, IndexModel
 
 from .base import TimestampedDocument
 from .embedded import EmergencyContact, Address, HealthInsurance
-from .enums import (
-    MaritalStatus,
-    EducationLevel,
-    BloodGroup,
-    PrimaryLanguage,
-    Sex,
-)
+from ..constants.global_constants import Sex, MaritalStatus, EducationLevel, BloodGroup, PrimaryLanguage
 
 
 class Patient(TimestampedDocument):
@@ -38,7 +32,7 @@ class Patient(TimestampedDocument):
     blood_group: Optional[BloodGroup] = None
 
     # Cultural / linguistic (constitutional context)
-    primary_language: PrimaryLanguage = PrimaryLanguage.SPANISH
+    primary_language: PrimaryLanguage = "spanish"
     indigenous_community: Optional[str] = None
 
     # Contact

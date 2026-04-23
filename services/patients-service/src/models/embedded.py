@@ -5,14 +5,11 @@ from typing import Optional, List
 from beanie import PydanticObjectId
 from pydantic import BaseModel, Field
 
-from .enums import (
-    InsuranceType,
-    DiagnosisType,
-    DiagnosisCertainty,
-    ExamType,
-    ExamUrgency,
-    AdministrationRoute,
+from ..constants.global_constants import (
+    InsuranceType, DiagnosisType, DiagnosisCertainty,
+    ExamType, ExamUrgency, AdministrationRoute,
 )
+
 
 
 # ---------------------------------------------------------------------------
@@ -104,8 +101,8 @@ class PhysicalExam(BaseModel):
 class Diagnosis(BaseModel):
     icd10_code: str                         # e.g. "I21.9"
     description: str
-    type: DiagnosisType = DiagnosisType.PRIMARY
-    certainty: DiagnosisCertainty = DiagnosisCertainty.PRESUMPTIVE
+    type: DiagnosisType = "primary"
+    certainty: DiagnosisCertainty = "presumptive"
 
 
 # ---------------------------------------------------------------------------
@@ -114,7 +111,7 @@ class Diagnosis(BaseModel):
 class RequestedExam(BaseModel):
     type: ExamType
     description: str
-    urgency: ExamUrgency = ExamUrgency.ROUTINE
+    urgency: ExamUrgency = "routine"
     notes: Optional[str] = None
 
 
