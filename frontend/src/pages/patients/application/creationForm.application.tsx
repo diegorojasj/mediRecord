@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import type { FormState } from "../presentation/creationForm/creationForm_types"
 import { INITIAL_STATE } from "../presentation/creationForm/creationForm_initialState"
 import CreationFormPresentation from "../presentation/creationForm.presentation"
+import { createPatient, updatePatient, type PatientOptions } from "@/lib/api/patients"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -10,8 +11,19 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet"
 
-
-const CreationFormApplication = ({ initialData, onClose }: { initialData?: FormState; onClose?: () => void } = {}) => {
+const CreationFormApplication = ({
+  initialData,
+  patientId,
+  options,
+  onClose,
+  onSaved,
+}: {
+  initialData?: FormState
+  patientId?: string
+  options: PatientOptions
+  onClose?: () => void
+  onSaved?: () => void
+} = {} as never) => {
   const [form, setForm] = useState<FormState>(INITIAL_STATE)
   const [open, setOpen] = useState(!!initialData)
 
@@ -27,9 +39,28 @@ const CreationFormApplication = ({ initialData, onClose }: { initialData?: FormS
   const setSelect = (key: keyof FormState) => (value: string) =>
     setForm((prev) => ({ ...prev, [key]: value }))
 
-  const onSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
+  const onSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault()
-    console.log("Patient form submitted:", form)
+    try {
+      if (patientId) {
+        await updatePatient(patientId, form)
+      } else {
+        await createPatient(form)
+      }
+      setOpen(false)
+      onSaved?.()
+    } catch (err) {
+      console.error("Failed to save patient:", err)
+    }
+  }
+
+  const formOptions = {
+    sex: options.sex,
+    maritalStatus: options.maritalStatus,
+    educationLevel: options.educationLevel,
+    bloodGroup: options.bloodGroup,
+    primaryLanguage: options.primaryLanguage,
+    insuranceType: options.insuranceType,
   }
 
   return (
@@ -43,6 +74,7 @@ const CreationFormApplication = ({ initialData, onClose }: { initialData?: FormS
           set={set}
           setSelect={setSelect}
           onSubmit={onSubmit}
+          options={formOptions}
         />
       </SheetContent>
     </Sheet>

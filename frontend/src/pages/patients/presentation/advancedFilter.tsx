@@ -3,14 +3,16 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Accordion, AccordionContent, AccordionItem } from "@/components/ui/accordion"
-import {
-    SEX_OPTIONS,
-    BLOOD_GROUP_OPTIONS,
-    MARITAL_STATUS_OPTIONS,
-    EDUCATION_LEVEL_OPTIONS,
-    INSURANCE_TYPE_OPTIONS,
-    PRIMARY_LANGUAGE_OPTIONS,
-} from "@/consts/const_patients"
+
+type SelectOption = { value: string; label: string }
+type FilterOptions = {
+    sex: SelectOption[]
+    bloodGroup: SelectOption[]
+    maritalStatus: SelectOption[]
+    educationLevel: SelectOption[]
+    insuranceType: SelectOption[]
+    primaryLanguage: SelectOption[]
+}
 
 export type FilterValues = {
     document: string
@@ -86,9 +88,10 @@ function FilterSelect({ label, options, value, onChange }: {
     )
 }
 
-const AdvancedFilter = ({ open, clearSignal, onUsedChange, onFilterChange }: {
+const AdvancedFilter = ({ open, clearSignal, options, onUsedChange, onFilterChange }: {
     open: boolean
     clearSignal: number
+    options: FilterOptions
     onUsedChange: (isUsed: boolean) => void
     onFilterChange?: (filters: FilterValues) => void
 }) => {
@@ -119,13 +122,13 @@ const AdvancedFilter = ({ open, clearSignal, onUsedChange, onFilterChange }: {
                             <SectionLabel>Personal</SectionLabel>
                             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-3 gap-y-2">
                                 <FilterInput label="Document" placeholder="National ID" value={filters.document} onChange={set("document")} />
-                                <FilterSelect label="Sex" options={SEX_OPTIONS} value={filters.sex} onChange={set("sex")} />
+                                <FilterSelect label="Sex" options={options.sex} value={filters.sex} onChange={set("sex")} />
                                 <FilterInput label="Date of birth" type="date" value={filters.dateOfBirth} onChange={set("dateOfBirth")} />
-                                <FilterSelect label="Blood group" options={BLOOD_GROUP_OPTIONS} value={filters.bloodGroup} onChange={set("bloodGroup")} />
-                                <FilterSelect label="Marital status" options={MARITAL_STATUS_OPTIONS} value={filters.maritalStatus} onChange={set("maritalStatus")} />
-                                <FilterSelect label="Education" options={EDUCATION_LEVEL_OPTIONS} value={filters.education} onChange={set("education")} />
+                                <FilterSelect label="Blood group" options={options.bloodGroup} value={filters.bloodGroup} onChange={set("bloodGroup")} />
+                                <FilterSelect label="Marital status" options={options.maritalStatus} value={filters.maritalStatus} onChange={set("maritalStatus")} />
+                                <FilterSelect label="Education" options={options.educationLevel} value={filters.education} onChange={set("education")} />
                                 <FilterInput label="Occupation" value={filters.occupation} onChange={set("occupation")} />
-                                <FilterSelect label="Language" options={PRIMARY_LANGUAGE_OPTIONS} value={filters.language} onChange={set("language")} />
+                                <FilterSelect label="Language" options={options.primaryLanguage} value={filters.language} onChange={set("language")} />
                             </div>
                         </div>
 
@@ -144,7 +147,7 @@ const AdvancedFilter = ({ open, clearSignal, onUsedChange, onFilterChange }: {
                             <SectionLabel>Administrative</SectionLabel>
                             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-3 gap-y-2">
                                 <FilterInput label="Record number" placeholder="EXP-2026-..." value={filters.recordNumber} onChange={set("recordNumber")} />
-                                <FilterSelect label="Insurance type" options={INSURANCE_TYPE_OPTIONS} value={filters.insuranceType} onChange={set("insuranceType")} />
+                                <FilterSelect label="Insurance type" options={options.insuranceType} value={filters.insuranceType} onChange={set("insuranceType")} />
                                 <FilterInput label="Affiliation number" value={filters.affiliationNumber} onChange={set("affiliationNumber")} />
                                 <FilterInput label="Insurance provider" value={filters.insuranceProvider} onChange={set("insuranceProvider")} />
                             </div>

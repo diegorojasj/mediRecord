@@ -16,12 +16,21 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { BLOOD_GROUP_OPTIONS, EDUCATION_LEVEL_OPTIONS, INSURANCE_TYPE_OPTIONS, MARITAL_STATUS_OPTIONS, PRIMARY_LANGUAGE_OPTIONS, SEX_OPTIONS } from "@/consts/const_patients"
 import { SelectField } from "@/components/selectField"
 import { type ChangeEvent, type SyntheticEvent } from "react"
 import type { FormState } from "./creationForm/creationForm_types"
 
-const CreationFormPresentation = ({ form, set, setSelect, onSubmit } : { form: FormState, set: (key: keyof FormState) => (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void; setSelect: (key: keyof FormState) => (value: string) => void; onSubmit: (e: SyntheticEvent<HTMLFormElement>) => void }) => {
+type SelectOption = { value: string; label: string }
+type FormOptions = {
+  sex: SelectOption[]
+  maritalStatus: SelectOption[]
+  educationLevel: SelectOption[]
+  bloodGroup: SelectOption[]
+  primaryLanguage: SelectOption[]
+  insuranceType: SelectOption[]
+}
+
+const CreationFormPresentation = ({ form, set, setSelect, onSubmit, options } : { form: FormState; options: FormOptions; set: (key: keyof FormState) => (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void; setSelect: (key: keyof FormState) => (value: string) => void; onSubmit: (e: SyntheticEvent<HTMLFormElement>) => void }) => {
   return <form onSubmit={onSubmit} className="flex h-full flex-col">
           <SheetHeader>
             <SheetTitle className="!text-gray-900 dark:!text-gray-50">Register Patient</SheetTitle>
@@ -75,17 +84,17 @@ const CreationFormPresentation = ({ form, set, setSelect, onSubmit } : { form: F
                     <Label htmlFor="date_of_birth">Date of Birth *</Label>
                     <Input id="date_of_birth" type="date" value={form.date_of_birth} onChange={set("date_of_birth")} required />
                   </Field>
-                  <SelectField id="sex" label="Sex *" options={SEX_OPTIONS} value={form.sex} onChange={setSelect("sex")} />
-                  <SelectField id="marital_status" label="Marital Status" options={MARITAL_STATUS_OPTIONS} value={form.marital_status} onChange={setSelect("marital_status")} />
-                  <SelectField id="education_level" label="Education Level" options={EDUCATION_LEVEL_OPTIONS} value={form.education_level} onChange={setSelect("education_level")} />
-                  <SelectField id="blood_group" label="Blood Group" options={BLOOD_GROUP_OPTIONS} value={form.blood_group} onChange={setSelect("blood_group")} />
+                  <SelectField id="sex" label="Sex *" options={options.sex} value={form.sex} onChange={setSelect("sex")} />
+                  <SelectField id="marital_status" label="Marital Status" options={options.maritalStatus} value={form.marital_status} onChange={setSelect("marital_status")} />
+                  <SelectField id="education_level" label="Education Level" options={options.educationLevel} value={form.education_level} onChange={setSelect("education_level")} />
+                  <SelectField id="blood_group" label="Blood Group" options={options.bloodGroup} value={form.blood_group} onChange={setSelect("blood_group")} />
                 </div>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <Field>
                     <Label htmlFor="occupation">Occupation</Label>
                     <Input id="occupation" value={form.occupation} onChange={set("occupation")} />
                   </Field>
-                  <SelectField id="primary_language" label="Primary Language" options={PRIMARY_LANGUAGE_OPTIONS} value={form.primary_language} onChange={setSelect("primary_language")} />
+                  <SelectField id="primary_language" label="Primary Language" options={options.primaryLanguage} value={form.primary_language} onChange={setSelect("primary_language")} />
                 </div>
                 <Field>
                   <Label htmlFor="indigenous_community">Indigenous Community</Label>
@@ -188,7 +197,7 @@ const CreationFormPresentation = ({ form, set, setSelect, onSubmit } : { form: F
               <FieldLegend>Health Insurance</FieldLegend>
               <FieldGroup>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <SelectField id="insurance_type" label="Type" options={INSURANCE_TYPE_OPTIONS} value={form.insurance_type} onChange={setSelect("insurance_type")} />
+                  <SelectField id="insurance_type" label="Type" options={options.insuranceType} value={form.insurance_type} onChange={setSelect("insurance_type")} />
                   <Field>
                     <Label htmlFor="insurance_affiliation_number">Affiliation Number</Label>
                     <Input id="insurance_affiliation_number" value={form.insurance_affiliation_number} onChange={set("insurance_affiliation_number")} />
