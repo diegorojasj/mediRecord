@@ -1,5 +1,5 @@
 x-mongodb-env: &mongodb-env
-  DB_HOST: ${DB_HOST:-localhost}
+  DB_HOST: ${DB_HOST:-database}
   DB_PORT: ${DB_PORT:-27017}
   DB_USER: ${DB_USER}
   DB_PASSWORD: ${DB_PASSWORD}
@@ -11,7 +11,7 @@ services:
     profiles: ["PROD"]
     build:
       context: ./frontend
-      dockerfile: containers/containerfiles/frontend.prod.containerfile
+      dockerfile: ../containers/containerfiles/frontend.prod.containerfile
     volumes:
       - web-cache:/www
 
@@ -30,14 +30,14 @@ services:
     profiles: ["DEV"]
     build:
       context: ./frontend
-      dockerfile: containers/containerfiles/frontend.dev.containerfile
+      dockerfile: ../containers/containerfiles/frontend.dev.containerfile
     environment:
       API_GATEWAY_URL: http://api-gateway-dev:8000
     volumes:
-      - ./frontend:/app
+      - ./frontend:/app:z
       - node_modules:/app/node_modules
-    expose:
-      - "5173"
+    ports:
+      - "5173:5173"
     depends_on:
       - api-gateway-dev
 
@@ -45,31 +45,37 @@ services:
     profiles: ["PROD"]
     build:
       context: ./services
-      dockerfile: containers/containerfiles/service.prod.containerfile
+      dockerfile: ../containers/containerfiles/service.prod.containerfile
       args:
         SERVICE_DIR: api-gateway
     environment:
       PORT: "8000"
+      PATIENTS_SERVICE_URL: http://patients-service-prod:8004
     expose:
       - "8000"
+    depends_on:
+      - patients-service-prod
 
   api-gateway-dev:
     profiles: ["DEV"]
     build:
       context: ./services
-      dockerfile: containers/containerfiles/service.dev.containerfile
+      dockerfile: ../containers/containerfiles/service.dev.containerfile
     environment:
       PORT: "8000"
+      PATIENTS_SERVICE_URL: http://patients-service-dev:8004
     volumes:
-      - ./services/api-gateway:/app
+      - ./services/api-gateway:/app:z
     expose:
       - "8000"
+    depends_on:
+      - patients-service-dev
 
   appointments-service-prod:
     profiles: ["PROD"]
     build:
       context: ./services
-      dockerfile: containers/containerfiles/service.prod.containerfile
+      dockerfile: ../containers/containerfiles/service.prod.containerfile
       args:
         SERVICE_DIR: appointments-service
     environment:
@@ -81,11 +87,11 @@ services:
     profiles: ["DEV"]
     build:
       context: ./services
-      dockerfile: containers/containerfiles/service.dev.containerfile
+      dockerfile: ../containers/containerfiles/service.dev.containerfile
     environment:
       PORT: "8001"
     volumes:
-      - ./services/appointments-service:/app
+      - ./services/appointments-service:/app:z
     expose:
       - "8001"
 
@@ -93,7 +99,7 @@ services:
     profiles: ["PROD"]
     build:
       context: ./services
-      dockerfile: containers/containerfiles/service.prod.containerfile
+      dockerfile: ../containers/containerfiles/service.prod.containerfile
       args:
         SERVICE_DIR: auth-service
     environment:
@@ -105,11 +111,11 @@ services:
     profiles: ["DEV"]
     build:
       context: ./services
-      dockerfile: containers/containerfiles/service.dev.containerfile
+      dockerfile: ../containers/containerfiles/service.dev.containerfile
     environment:
       PORT: "8002"
     volumes:
-      - ./services/auth-service:/app
+      - ./services/auth-service:/app:z
     expose:
       - "8002"
 
@@ -117,7 +123,7 @@ services:
     profiles: ["PROD"]
     build:
       context: ./services
-      dockerfile: containers/containerfiles/service.prod.containerfile
+      dockerfile: ../containers/containerfiles/service.prod.containerfile
       args:
         SERVICE_DIR: billing-service
     environment:
@@ -129,11 +135,11 @@ services:
     profiles: ["DEV"]
     build:
       context: ./services
-      dockerfile: containers/containerfiles/service.dev.containerfile
+      dockerfile: ../containers/containerfiles/service.dev.containerfile
     environment:
       PORT: "8003"
     volumes:
-      - ./services/billing-service:/app
+      - ./services/billing-service:/app:z
     expose:
       - "8003"
 
@@ -141,25 +147,31 @@ services:
     profiles: ["PROD"]
     build:
       context: ./services
-      dockerfile: containers/containerfiles/service.prod.containerfile
+      dockerfile: ../containers/containerfiles/service.prod.containerfile
       args:
         SERVICE_DIR: patients-service
     environment:
+      <<: *mongodb-env
       PORT: "8004"
     expose:
       - "8004"
+    depends_on:
+      - database
 
   patients-service-dev:
     profiles: ["DEV"]
     build:
       context: ./services
-      dockerfile: containers/containerfiles/service.dev.containerfile
+      dockerfile: ../containers/containerfiles/service.dev.containerfile
     environment:
+      <<: *mongodb-env
       PORT: "8004"
     volumes:
-      - ./services/patients-service:/app
+      - ./services/patients-service:/app:z
     expose:
       - "8004"
+    depends_on:
+      - database
 
   database:
     image: mongo:6.0.26-rc0-jammy
@@ -174,7 +186,7 @@ services:
       <<: *mongodb-env
       MONGO_INITDB_DATABASE: ${DB_NAME}
     volumes:
-      - ./containers/init/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+      - ./containers/init/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro,z
     expose:
       - "27017"
 
