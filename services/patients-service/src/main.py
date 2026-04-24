@@ -1,18 +1,32 @@
-from fastapi import Request
-from fastapi import FastAPI
+from contextlib import asynccontextmanager
 
-from .controllers.patientsController import get_patients
-from .controllers.constantsController import get_constants_blood_group
-from .controllers.constantsController import get_constants_education_level
-from .controllers.constantsController import get_constants_insurance_type
-from .controllers.constantsController import get_constants_marital_status
-from .controllers.constantsController import get_constants_primary_language
-from .controllers.constantsController import get_constants_sex
-from .controllers.patientsController import create_patient
-from .controllers.patientsController import update_patient
-from .controllers.patientsController import delete_patient
+from fastapi import FastAPI, Request
 
-app = FastAPI()
+from .controllers.constantsController import (
+    get_constants_blood_group,
+    get_constants_education_level,
+    get_constants_insurance_type,
+    get_constants_marital_status,
+    get_constants_primary_language,
+    get_constants_sex,
+)
+from .controllers.patientsController import (
+    create_patient,
+    delete_patient,
+    get_patients,
+    update_patient,
+)
+from .core.database import init_db
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await init_db(app)
+    yield
+    app.state.mongo_client.close()
+
+
+app = FastAPI(lifespan=lifespan)
 
 @app.get("/")
 async def get_root():
@@ -34,7 +48,7 @@ async def update_patient_root(request: Request, patient_id: str):
 async def delete_patient_root(patient_id: str):
     return await delete_patient(patient_id)
 
-# Constants
+# constants
 @app.get("/sex")
 async def get_patient_constants_sex():
     return get_constants_sex()

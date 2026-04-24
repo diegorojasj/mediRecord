@@ -19,13 +19,13 @@ router = APIRouter(prefix="/patients")
 async def get_patients_root(request: Request):
     return await get_patients(request)
 
-@router.get("/{patient_id}")
-async def get_patient(request: Request, patient_id: str):
-    return await get_patients(request, patient_id)
-
 @router.post("/")
 async def create_patient_root(request: Request):
     return await create_patient(request)
+
+@router.get("/{patient_id}")
+async def get_patient(request: Request, patient_id: str):
+    return await get_patients(request, patient_id)
 
 @router.put("/{patient_id}")
 async def update_patient_root(request: Request, patient_id: str):
@@ -35,8 +35,7 @@ async def update_patient_root(request: Request, patient_id: str):
 async def delete_patient_root(request: Request, patient_id: str):
     return await delete_patient(request, patient_id)
 
-
-# Constants
+# constants
 @router.get("/sex")
 async def get_consts_sex(request: Request):
     return await get_patient_consts_sex(request)
