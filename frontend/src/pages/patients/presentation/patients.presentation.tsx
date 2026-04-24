@@ -156,7 +156,7 @@ const PatientsPresentation = ({
                     <SearchInput value={searchQuery} onChange={setSearchQuery} />
                     <div className="flex ml-1 items-end gap-0.5">
                         <Tooltip delayDuration={800}>
-                            <TooltipTrigger>
+                            <TooltipTrigger asChild>
                                 <button
                                     type="button"
                                     className="inline-flex items-center justify-center rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
@@ -171,7 +171,7 @@ const PatientsPresentation = ({
                         </Tooltip>
                         {advancedFilterUsed && (
                             <Tooltip delayDuration={800}>
-                                <TooltipTrigger>
+                                <TooltipTrigger asChild>
                                     <button
                                         type="button"
                                         className="inline-flex items-center justify-center rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-destructive transition-colors"
