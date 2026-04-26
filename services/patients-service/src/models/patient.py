@@ -2,7 +2,7 @@ from datetime import date
 from typing import Annotated, Optional
 
 from beanie import Indexed, PydanticObjectId
-from pydantic import EmailStr, Field
+from pydantic import EmailStr
 from pymongo import ASCENDING, DESCENDING, TEXT, IndexModel
 
 from .base import TimestampedDocument
@@ -47,7 +47,7 @@ class Patient(TimestampedDocument):
 
     # Admin
     administrative_notes: Optional[str] = None
-    registered_by_id: PydanticObjectId
+    registered_by_id: Optional[PydanticObjectId] = None
     is_active: bool = True  # soft-delete only — never hard-delete (legal retention)
 
     class Settings(TimestampedDocument.Settings):

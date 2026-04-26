@@ -1,5 +1,20 @@
+from datetime import date
+
 from fastapi import Request
+
 from ..models.patient import Patient
+
+
+async def _next_record_number(db) -> str:
+    year = date.today().year
+    result = await db["counters"].find_one_and_update(
+        {"_id": f"record_number_{year}"},
+        {"$inc": {"seq": 1}},
+        upsert=True,
+        return_document=True,
+    )
+    return f"EXP-{year}-{result['seq']:05d}"
+
 
 async def get_patients(id: str | None = None):
     if id:
@@ -8,6 +23,7 @@ async def get_patients(id: str | None = None):
 
 async def create_patient(request: Request):
     json_data = await request.json()
+    json_data["record_number"] = await _next_record_number(request.app.state.db)
     patient = Patient(**json_data)
     await patient.insert()
     return patient
