@@ -1,7 +1,7 @@
 from typing import Literal
 
 # Patient demographics
-Sex = Literal["M", "F", "other"]
+Sex = Literal["Male", "Female", "other"]
 BloodGroup = Literal["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]
 MaritalStatus = Literal["single", "married", "divorced", "widowed", "cohabitating"]
 EducationLevel = Literal["none", "primary", "secondary", "technical", "university", "postgraduate"]
