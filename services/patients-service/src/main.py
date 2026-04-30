@@ -17,6 +17,7 @@ from .controllers.patientsController import (
     update_patient,
 )
 from .core.database import init_db
+from .models.patient import Patient
 
 
 @asynccontextmanager
@@ -56,22 +57,22 @@ async def get_patient_constants_primary_language():
 
 
 # patient operations
-@app.get("/")
+@app.get("/", response_model=list[Patient], response_model_by_alias=False)
 async def get_root():
     return await get_patients()
 
-@app.post("/")
+@app.post("/", response_model=Patient, response_model_by_alias=False)
 async def create_patient_root(request: Request):
     return await create_patient(request)
 
-@app.get("/{patient_id}")
+@app.get("/{patient_id}", response_model=Patient | None, response_model_by_alias=False)
 async def get_patient_root(patient_id: str):
     return await get_patients(patient_id)
 
-@app.put("/{patient_id}")
+@app.put("/{patient_id}", response_model=Patient | None, response_model_by_alias=False)
 async def update_patient_root(request: Request, patient_id: str):
     return await update_patient(request, patient_id)
 
-@app.delete("/{patient_id}")
+@app.delete("/{patient_id}", response_model=Patient | None, response_model_by_alias=False)
 async def delete_patient_root(patient_id: str):
     return await delete_patient(patient_id)
