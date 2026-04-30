@@ -1,6 +1,8 @@
 from datetime import date
 
-from fastapi import Request
+from fastapi import HTTPException, Request
+from pydantic import ValidationError
+from pymongo.errors import DuplicateKeyError
 
 from ..models.patient import Patient
 
@@ -24,8 +26,13 @@ async def get_patients(id: str | None = None):
 async def create_patient(request: Request):
     json_data = await request.json()
     json_data["record_number"] = await _next_record_number(request.app.state.db)
-    patient = Patient(**json_data)
-    await patient.insert()
+    try:
+        patient = Patient(**json_data)
+        await patient.insert()
+    except ValidationError as exc:
+        raise HTTPException(status_code=422, detail=exc.errors()) from exc
+    except DuplicateKeyError as exc:
+        raise HTTPException(status_code=409, detail="Patient already exists") from exc
     return patient
 
 async def update_patient(request: Request, id: str):
