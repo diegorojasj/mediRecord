@@ -194,9 +194,7 @@ services:
 volumes:
   node_modules:
     driver: local
-  vite_cache:
-    driver: local
-  npm_cache:
+  pnpm_store:
     driver: local
   web-cache:
     driver: local
