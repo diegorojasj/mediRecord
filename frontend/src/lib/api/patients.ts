@@ -1,4 +1,4 @@
-import type { Patient } from "@/types/type_patients"
+import type { Patient } from "@/types/patients_type"
 import type { FormState } from "@/pages/patients/presentation/creationForm/creationForm_types"
 
 const BASE = "/api/patients"

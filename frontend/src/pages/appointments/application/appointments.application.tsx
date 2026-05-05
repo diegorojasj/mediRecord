@@ -1,5 +1,9 @@
+import CalendarApplication from "./calendar.application";
+
 const AppointmentsApplication = () => {
-    return <div>Hello "/appointments"!</div>;
+    return <div>
+        <CalendarApplication />
+    </div>;
 }
 
 export default AppointmentsApplication;

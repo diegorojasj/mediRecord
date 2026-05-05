@@ -3,7 +3,6 @@ export type Sex = "M" | "F" | "other"
 export type BloodGroup = "A+" | "A-" | "B+" | "B-" | "AB+" | "AB-" | "O+" | "O-"
 export type MaritalStatus = "single" | "married" | "divorced" | "widowed" | "cohabitating"
 export type EducationLevel = "none" | "primary" | "secondary" | "technical" | "university" | "postgraduate"
-export type InsuranceType = "SUS" | "CNS" | "private" | "none"
 
 export type Address = {
     street: string
@@ -22,7 +21,7 @@ export type EmergencyContact = {
 }
 
 export type HealthInsurance = {
-    type: InsuranceType
+    type: string
     affiliation_number?: string
     provider?: string
 }

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import PatientsPresentation from "../presentation/patients.presentation"
-import type { Patient } from "@/types/type_patients"
+import type { Patient } from "@/types/patients_type"
 import { getPatients, getAllPatientOptions, type PatientOptions } from "@/lib/api/patients"
 
 const PatientsApplication = () => {
