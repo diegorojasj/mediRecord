@@ -1,7 +1,8 @@
 from datetime import date
 from typing import Annotated, Optional
 
-from beanie import Indexed, PydanticObjectId
+from datetime import datetime, timezone
+from beanie import Indexed, PydanticObjectId, before_event, Insert, Replace, Update
 from pydantic import EmailStr
 from pymongo import ASCENDING, DESCENDING, TEXT, IndexModel
 
@@ -49,7 +50,13 @@ class Patient(TimestampedDocument):
     administrative_notes: Optional[str] = None
     registered_by_id: Optional[PydanticObjectId] = None
     is_active: bool = True  # soft-delete only — never hard-delete (legal retention)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+    @before_event([Insert, Replace, Update])
+    def update_timestamp(self):
+        """Update Timestamp."""
+        self.updated_at = datetime.now(timezone.utc)
     class Settings(TimestampedDocument.Settings):
         name = "patients"
         indexes = [

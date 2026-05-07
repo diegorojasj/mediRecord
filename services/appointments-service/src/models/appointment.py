@@ -1,8 +1,8 @@
 """Appointments — calendar/agenda."""
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
-from beanie import PydanticObjectId
+from beanie import PydanticObjectId, before_event, Insert, Replace, Update
 from pymongo import ASCENDING, DESCENDING, IndexModel
 
 from .base import TimestampedDocument
@@ -38,6 +38,13 @@ class Appointment(TimestampedDocument):
     notes: Optional[str] = None
     created_by_id: PydanticObjectId
 
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+    @before_event([Insert, Replace, Update])
+    def update_timestamp(self):
+        """Update Timestamp."""
+        self.updated_at = datetime.now(timezone.utc)
     class Settings(TimestampedDocument.Settings):
         name = "appointments"
         indexes = [
@@ -56,4 +63,5 @@ class Appointment(TimestampedDocument):
                 ("status", ASCENDING),
                 ("start_datetime", ASCENDING),
             ]),
+            IndexModel([("created_at", DESCENDING)]),
         ]
