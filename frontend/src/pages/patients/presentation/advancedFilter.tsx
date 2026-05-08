@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -88,22 +88,13 @@ function FilterSelect({ label, options, value, onChange }: {
     )
 }
 
-const AdvancedFilter = ({ open, clearSignal, options, onUsedChange, onFilterChange }: {
+const AdvancedFilter = ({ open, options, onUsedChange, onFilterChange }: {
     open: boolean
-    clearSignal: number
     options: FilterOptions
     onUsedChange: (isUsed: boolean) => void
     onFilterChange?: (filters: FilterValues) => void
 }) => {
     const [filters, setFilters] = useState<FilterValues>(INITIAL_FILTER)
-    const isFirstRender = useRef(true)
-
-    useEffect(() => {
-        if (isFirstRender.current) { isFirstRender.current = false; return }
-        setFilters(INITIAL_FILTER)
-        onUsedChange(false)
-        onFilterChange?.(INITIAL_FILTER)
-    }, [clearSignal])
 
     const set = (key: keyof FilterValues) => (value: string) => {
         const next = { ...filters, [key]: value }

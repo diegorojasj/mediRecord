@@ -175,7 +175,11 @@ const PatientsPresentation = ({
                                     <button
                                         type="button"
                                         className="inline-flex items-center justify-center rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-destructive transition-colors"
-                                        onClick={() => setClearSignal(s => s + 1)}
+                                        onClick={() => {
+                                            setClearSignal(s => s + 1)
+                                            setAdvancedFilterUsed(false)
+                                            setAdvancedFilters(INITIAL_ADVANCED)
+                                        }}
                                     >
                                         <HugeiconsIcon icon={FilterRemoveIcon} size={20} strokeWidth={2} />
                                     </button>
@@ -189,6 +193,7 @@ const PatientsPresentation = ({
                 </div>
                 <div className="flex-shrink-0 flex items-end">
                     <CreationFormApplication
+                        key={selectedPatient?.id ?? "new"}
                         initialData={selectedPatient?.formState}
                         patientId={selectedPatient?.id}
                         options={resolvedOptions}
@@ -198,8 +203,8 @@ const PatientsPresentation = ({
                 </div>
             </div>
             <AdvancedFilter
+                key={clearSignal}
                 open={advancedFilterOpen}
-                clearSignal={clearSignal}
                 options={resolvedOptions}
                 onUsedChange={setAdvancedFilterUsed}
                 onFilterChange={setAdvancedFilters}

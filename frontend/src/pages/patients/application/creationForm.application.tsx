@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import type { FormState } from "../presentation/creationForm/creationForm_types"
 import { INITIAL_STATE } from "../presentation/creationForm/creationForm_initialState"
 import CreationFormPresentation from "../presentation/creationForm.presentation"
@@ -24,13 +24,8 @@ const CreationFormApplication = ({
   onClose?: () => void
   onSaved?: () => void
 } = {} as never) => {
-  const [form, setForm] = useState<FormState>(INITIAL_STATE)
+  const [form, setForm] = useState<FormState>(initialData ?? INITIAL_STATE)
   const [open, setOpen] = useState(!!initialData)
-
-  useEffect(() => {
-    setForm(initialData ?? INITIAL_STATE)
-    if (initialData !== undefined) setOpen(true)
-  }, [initialData])
 
   const set = (key: keyof FormState) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
@@ -64,7 +59,7 @@ const CreationFormApplication = ({
   }
 
   return (
-    <Sheet open={open} onOpenChange={(isOpen) => { setOpen(isOpen); if (!isOpen) onClose?.() }}>
+    <Sheet open={open} onOpenChange={(isOpen) => { setOpen(isOpen); if (!isOpen) { setForm(initialData ?? INITIAL_STATE); onClose?.() } }}>
       <SheetTrigger asChild>
         <Button variant="outline">Register Patient</Button>
       </SheetTrigger>

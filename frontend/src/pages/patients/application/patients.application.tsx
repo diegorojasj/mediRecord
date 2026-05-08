@@ -18,7 +18,26 @@ const PatientsApplication = () => {
       .finally(() => setLoading(false))
   }
 
-  useEffect(load, [])
+  useEffect(() => {
+    let cancelled = false
+
+    Promise.all([getPatients(), getAllPatientOptions()])
+      .then(([p, o]) => {
+        if (cancelled) return
+        setPatients(p)
+        setOptions(o)
+      })
+      .catch(e => {
+        if (cancelled) return
+        setError(e.message)
+      })
+      .finally(() => {
+        if (cancelled) return
+        setLoading(false)
+      })
+
+    return () => { cancelled = true }
+  }, [])
 
   return (
     <PatientsPresentation
