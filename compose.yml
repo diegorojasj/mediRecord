@@ -51,10 +51,12 @@ services:
     environment:
       PORT: "8000"
       PATIENTS_SERVICE_URL: http://patients-service-prod:8004
+      APPOINTMENTS_SERVICE_URL: http://appointments-service-prod:8001
     expose:
       - "8000"
     depends_on:
       - patients-service-prod
+      - appointments-service-prod
 
   api-gateway-dev:
     profiles: ["DEV"]
@@ -64,12 +66,14 @@ services:
     environment:
       PORT: "8000"
       PATIENTS_SERVICE_URL: http://patients-service-dev:8004
+      APPOINTMENTS_SERVICE_URL: http://appointments-service-dev:8001
     volumes:
       - ./services/api-gateway:/app:z
     expose:
       - "8000"
     depends_on:
       - patients-service-dev
+      - appointments-service-dev
 
   appointments-service-prod:
     profiles: ["PROD"]
@@ -79,9 +83,12 @@ services:
       args:
         SERVICE_DIR: appointments-service
     environment:
+      <<: *mongodb-env
       PORT: "8001"
     expose:
       - "8001"
+    depends_on:
+      - database
 
   appointments-service-dev:
     profiles: ["DEV"]
@@ -89,11 +96,14 @@ services:
       context: ./services
       dockerfile: ../containers/containerfiles/service.dev.containerfile
     environment:
+      <<: *mongodb-env
       PORT: "8001"
     volumes:
       - ./services/appointments-service:/app:z
     expose:
       - "8001"
+    depends_on:
+      - database
 
   auth-service-prod:
     profiles: ["PROD"]
