@@ -9,12 +9,12 @@ const Layout = ({ children }: { children: ReactNode }) => {
     return (
         <>
             <AppSideBar />
-            <SidebarInset>
-                <main className="flex flex-1 flex-col p-4">
-                    <div className="flex items-center">
+            <SidebarInset className="overflow-x-hidden">
+                <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden p-2 sm:p-3 lg:p-4">
+                    <div className="flex h-8 shrink-0 items-center">
                         <SidebarTrigger />
                     </div>
-                    <div className="float-right">{children}</div>
+                    <div className="min-h-0 min-w-0 flex-1 overflow-auto">{children}</div>
                 </main>
             </SidebarInset>
         </>
