@@ -5,8 +5,7 @@
 
 
 # Python virtual environment
-backend/.venv/
-backend/venv/
+services/.venv/
 *.pyc
 __pycache__/
 *.py[cod]
