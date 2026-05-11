@@ -1,18 +1,27 @@
-import httpx
 from fastapi import Request
+
+from .proxyController import forward_json
+
+PATIENTS_SERVICE_NAME = "Patients service"
+
+
+async def _forward_to_patients(request: Request, method: str, url: str, json_data=None):
+    client = request.app.state.patients_client
+    return await forward_json(
+        client,
+        method,
+        url,
+        service_name=PATIENTS_SERVICE_NAME,
+        json_data=json_data,
+    )
 
 
 async def get_patients(request: Request, patient_id: str | None = None):
     """
     Get a specific patient or all patients.
     """
-    client: httpx.AsyncClient = request.app.state.patients_client
-    url = "/"
-    if patient_id is not None:
-        url = f"{url}/{patient_id}"
-    response = await client.get(url)
-    response.raise_for_status()
-    return response.json()
+    url = f"/{patient_id}" if patient_id is not None else "/"
+    return await _forward_to_patients(request, "GET", url)
 
 
 async def create_patient(request: Request):
@@ -20,10 +29,7 @@ async def create_patient(request: Request):
     Create a patient.
     """
     json_data = await request.json()
-    client: httpx.AsyncClient = request.app.state.patients_client
-    response = await client.post("/", json=json_data)
-    response.raise_for_status()
-    return response.json()
+    return await _forward_to_patients(request, "POST", "/", json_data=json_data)
 
 
 async def update_patient(request: Request, patient_id: str):
@@ -31,61 +37,37 @@ async def update_patient(request: Request, patient_id: str):
     Update a patient.
     """
     json_data = await request.json()
-    client: httpx.AsyncClient = request.app.state.patients_client
     url = f"/{patient_id}"
-    response = await client.put(url, json=json_data)
-    response.raise_for_status()
-    return response.json()
+    return await _forward_to_patients(request, "PUT", url, json_data=json_data)
 
 
 async def delete_patient(request: Request, patient_id: str):
     """
     Delete a patient.
     """
-    client: httpx.AsyncClient = request.app.state.patients_client
     url = f"/{patient_id}"
-    response = await client.delete(url)
-    response.raise_for_status()
-    return response.json()
+    return await _forward_to_patients(request, "DELETE", url)
 
 
 async def get_patient_consts_sex(request: Request):
-    client: httpx.AsyncClient = request.app.state.patients_client
-    response = await client.get("/sex")
-    response.raise_for_status()
-    return response.json()
+    return await _forward_to_patients(request, "GET", "/sex")
 
 
 async def get_patient_consts_blood_group(request: Request):
-    client: httpx.AsyncClient = request.app.state.patients_client
-    response = await client.get("/blood-group")
-    response.raise_for_status()
-    return response.json()
+    return await _forward_to_patients(request, "GET", "/blood-group")
 
 
 async def get_patient_consts_marital_status(request: Request):
-    client: httpx.AsyncClient = request.app.state.patients_client
-    response = await client.get("/marital-status")
-    response.raise_for_status()
-    return response.json()
+    return await _forward_to_patients(request, "GET", "/marital-status")
 
 
 async def get_patient_consts_education_level(request: Request):
-    client: httpx.AsyncClient = request.app.state.patients_client
-    response = await client.get("/education-level")
-    response.raise_for_status()
-    return response.json()
+    return await _forward_to_patients(request, "GET", "/education-level")
 
 
 async def get_patient_consts_insurance_type(request: Request):
-    client: httpx.AsyncClient = request.app.state.patients_client
-    response = await client.get("/insurance-type")
-    response.raise_for_status()
-    return response.json()
+    return await _forward_to_patients(request, "GET", "/insurance-type")
 
 
 async def get_patient_consts_primary_language(request: Request):
-    client: httpx.AsyncClient = request.app.state.patients_client
-    response = await client.get("/primary-language")
-    response.raise_for_status()
-    return response.json()
+    return await _forward_to_patients(request, "GET", "/primary-language")
