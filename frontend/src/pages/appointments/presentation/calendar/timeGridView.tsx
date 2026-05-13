@@ -1,20 +1,34 @@
 import { format, isSameDay, isToday } from "date-fns"
 import { dateKey, getEventPosition, hourLabel } from "./calendar_functions"
-import type { CalendarEvent, EventMap } from "./calendar_types"
+import type { CalendarDateSelection, CalendarEvent, EventMap } from "./calendar_types"
 import { cn } from "@/lib/utils"
 import { HOUR_HEIGHT, HOURS, WORKDAY_END_HOUR, WORKDAY_START_HOUR } from "./calendar_constants"
 import AppointmentPill from "./appointmentPill"
 
+const dateIsInSelection = (date: Date, selection: CalendarDateSelection) => {
+  const time = date.getTime()
+
+  return time >= selection.start.getTime() && time <= selection.end.getTime()
+}
+
 const TimeGridView = ({
+  dateSelection,
   days,
   eventsByDay,
   onDateSelect,
+  onDateSelectionEnd,
+  onDateSelectionMove,
+  onDateSelectionStart,
   onEventSelect,
   selectedDate,
 }: {
+  dateSelection: CalendarDateSelection
   days: Date[]
   eventsByDay: EventMap
   onDateSelect: (date: Date) => void
+  onDateSelectionEnd: () => void
+  onDateSelectionMove: (date: Date) => void
+  onDateSelectionStart: (date: Date) => void
   onEventSelect: (event: CalendarEvent) => void
   selectedDate: Date
 }) => {
@@ -32,29 +46,49 @@ const TimeGridView = ({
         style={{ minWidth: gridMinWidth }}
       >
         <div className="border-r" />
-        {days.map((day) => (
-          <button
-            key={dateKey(day)}
-            type="button"
-            className={cn(
-              "flex min-h-14 flex-col items-center justify-center gap-1 border-r px-1 py-2 text-center transition hover:bg-muted/50 sm:min-h-16 sm:px-2",
-              isSameDay(day, selectedDate) && "bg-sky-50"
-            )}
-            onClick={() => onDateSelect(day)}
-          >
-            <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-              {format(day, "EEE")}
-            </span>
-            <span
+        {days.map((day) => {
+          const inSelection = dateIsInSelection(day, dateSelection)
+          const selectionStart = isSameDay(day, dateSelection.start)
+          const selectionEnd = isSameDay(day, dateSelection.end)
+
+          return (
+            <button
+              key={dateKey(day)}
+              type="button"
               className={cn(
-                "inline-flex size-8 items-center justify-center rounded-full text-base font-medium",
-                isToday(day) && "bg-[#1a73e8] text-white"
+                "flex min-h-14 select-none flex-col items-center justify-center gap-1 border-r px-1 py-2 text-center transition hover:bg-muted/50 sm:min-h-16 sm:px-2",
+                (inSelection || isSameDay(day, selectedDate)) && "bg-sky-50"
               )}
+              onClick={() => onDateSelect(day)}
+              onPointerDown={(event) => {
+                if (event.button !== 0) return
+                event.preventDefault()
+                onDateSelectionStart(day)
+              }}
+              onPointerUp={(event) => {
+                if (event.button !== 0) return
+                onDateSelectionEnd()
+              }}
+              onPointerEnter={() => onDateSelectionMove(day)}
             >
-              {format(day, "d")}
-            </span>
-          </button>
-        ))}
+              <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                {format(day, "EEE")}
+              </span>
+              <span
+                className={cn(
+                  "inline-flex size-8 items-center justify-center rounded-full text-base font-medium",
+                  isToday(day) && "bg-[#1a73e8] text-white",
+                  inSelection && !isToday(day) && "bg-sky-100 text-sky-800",
+                  (selectionStart || selectionEnd) &&
+                    !isToday(day) &&
+                    "bg-sky-600 text-white"
+                )}
+              >
+                {format(day, "d")}
+              </span>
+            </button>
+          )
+        })}
       </div>
       <div
         className={cn("grid", gridCols)}
@@ -73,6 +107,7 @@ const TimeGridView = ({
         </div>
         {days.map((day) => {
           const dayEvents = eventsByDay.get(dateKey(day)) ?? []
+          const inSelection = dateIsInSelection(day, dateSelection)
           const showNow =
             isSameDay(day, now) &&
             now.getHours() >= WORKDAY_START_HOUR &&
@@ -82,7 +117,21 @@ const TimeGridView = ({
             HOUR_HEIGHT
 
           return (
-            <div key={dateKey(day)} className="relative border-r">
+            <div
+              key={dateKey(day)}
+              className={cn("relative select-none border-r", inSelection && "bg-sky-50/50")}
+              onDragStart={(event) => event.preventDefault()}
+              onPointerDown={(event) => {
+                if (event.button !== 0) return
+                event.preventDefault()
+                onDateSelectionStart(day)
+              }}
+              onPointerUp={(event) => {
+                if (event.button !== 0) return
+                onDateSelectionEnd()
+              }}
+              onPointerEnter={() => onDateSelectionMove(day)}
+            >
               {HOURS.map((hour) => (
                 <div
                   key={hour}
@@ -105,6 +154,7 @@ const TimeGridView = ({
                   <div
                     key={event.id}
                     className="absolute left-1 right-1 z-10 sm:left-1.5 sm:right-1.5"
+                    onPointerDown={(pointerEvent) => pointerEvent.stopPropagation()}
                     style={position}
                   >
                     <AppointmentPill event={event} onSelect={onEventSelect} />

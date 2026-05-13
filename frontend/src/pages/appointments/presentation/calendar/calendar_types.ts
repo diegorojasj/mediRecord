@@ -8,4 +8,9 @@ export type CalendarEvent = Appointment & {
   start: Date
 }
 
+export type CalendarDateSelection = {
+  end: Date
+  start: Date
+}
+
 export type EventMap = Map<string, CalendarEvent[]>
