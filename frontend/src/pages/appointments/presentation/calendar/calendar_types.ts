@@ -1,16 +1,16 @@
-import type { Appointment } from "@/types/appointments_type"
+import type { Appointment } from '@/types/appointments_type';
 
-export type CalendarView = "month" | "week" | "day" | "schedule"
+export type CalendarView = 'month' | 'week' | 'day' | 'schedule';
 
 export type CalendarEvent = Appointment & {
-  end: Date
-  searchText: string
-  start: Date
-}
+  end: Date;
+  searchText: string;
+  start: Date;
+};
 
 export type CalendarDateSelection = {
-  end: Date
-  start: Date
-}
+  end: Date;
+  start: Date;
+};
 
-export type EventMap = Map<string, CalendarEvent[]>
+export type EventMap = Map<string, CalendarEvent[]>;

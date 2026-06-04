@@ -1,44 +1,44 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from 'react';
 
-import { getAppointments } from "@/lib/api/appointments"
-import type { Appointment } from "@/types/appointments_type"
-import CalendarPresentation from "../presentation/calendar.presentation"
+import { getAppointments } from '@/lib/api/appointments';
+import type { Appointment } from '@/types/appointments_type';
+import CalendarPresentation from '../presentation/calendar.presentation';
 
 const CalendarApplication = () => {
-  const [appointments, setAppointments] = useState<Appointment[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(() => {
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
     getAppointments()
       .then(setAppointments)
       .catch((e: Error) => setError(e.message))
-      .finally(() => setLoading(false))
-  }, [])
+      .finally(() => setLoading(false));
+  }, []);
 
   useEffect(() => {
-    let cancelled = false
+    let cancelled = false;
 
     getAppointments()
       .then((data) => {
-        if (cancelled) return
-        setAppointments(data)
+        if (cancelled) return;
+        setAppointments(data);
       })
       .catch((e: Error) => {
-        if (cancelled) return
-        setError(e.message)
+        if (cancelled) return;
+        setError(e.message);
       })
       .finally(() => {
-        if (cancelled) return
-        setLoading(false)
-      })
+        if (cancelled) return;
+        setLoading(false);
+      });
 
     return () => {
-      cancelled = true
-    }
-  }, [])
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <CalendarPresentation
@@ -47,7 +47,7 @@ const CalendarApplication = () => {
       loading={loading}
       onRefresh={load}
     />
-  )
-}
+  );
+};
 
-export default CalendarApplication
+export default CalendarApplication;

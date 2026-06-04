@@ -1,5 +1,5 @@
 const BillingApplication = () => {
-    return <div>Hello "/billing"!</div>;
-}
+  return <div>Hello "/billing"!</div>;
+};
 
 export default BillingApplication;

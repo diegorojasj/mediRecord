@@ -1,12 +1,12 @@
-import { Label } from "@/components/ui/label"
-import { Field } from "@/components/ui/field"
+import { Label } from '@/components/ui/label';
+import { Field } from '@/components/ui/field';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from '@/components/ui/select';
 
 export function SelectField({
   id,
@@ -16,12 +16,12 @@ export function SelectField({
   value,
   onChange,
 }: {
-  id: string
-  label: string
-  placeholder?: string
-  options: { value: string; label: string }[]
-  value: string
-  onChange: (v: string) => void
+  id: string;
+  label: string;
+  placeholder?: string;
+  options: { value: string; label: string }[];
+  value: string;
+  onChange: (v: string) => void;
 }) {
   return (
     <Field>
@@ -39,5 +39,5 @@ export function SelectField({
         </SelectContent>
       </Select>
     </Field>
-  )
+  );
 }

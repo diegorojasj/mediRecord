@@ -8,102 +8,100 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router';
 
-import { Route as rootRouteImport } from './pages/__root'
+import { Route as rootRouteImport } from './pages/__root';
 
-const IndexLazyRouteImport = createFileRoute('/')()
-const PatientsIndexLazyRouteImport = createFileRoute('/patients/')()
-const BillingIndexLazyRouteImport = createFileRoute('/billing/')()
-const AppointmentsIndexLazyRouteImport = createFileRoute('/appointments/')()
+const IndexLazyRouteImport = createFileRoute('/')();
+const PatientsIndexLazyRouteImport = createFileRoute('/patients/')();
+const BillingIndexLazyRouteImport = createFileRoute('/billing/')();
+const AppointmentsIndexLazyRouteImport = createFileRoute('/appointments/')();
 
 const IndexLazyRoute = IndexLazyRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
-} as any).lazy(() => import('./pages/index.lazy').then((d) => d.Route))
+} as any).lazy(() => import('./pages/index.lazy').then((d) => d.Route));
 const PatientsIndexLazyRoute = PatientsIndexLazyRouteImport.update({
   id: '/patients/',
   path: '/patients/',
   getParentRoute: () => rootRouteImport,
-} as any).lazy(() => import('./pages/patients/index.lazy').then((d) => d.Route))
+} as any).lazy(() => import('./pages/patients/index.lazy').then((d) => d.Route));
 const BillingIndexLazyRoute = BillingIndexLazyRouteImport.update({
   id: '/billing/',
   path: '/billing/',
   getParentRoute: () => rootRouteImport,
-} as any).lazy(() => import('./pages/billing/index.lazy').then((d) => d.Route))
+} as any).lazy(() => import('./pages/billing/index.lazy').then((d) => d.Route));
 const AppointmentsIndexLazyRoute = AppointmentsIndexLazyRouteImport.update({
   id: '/appointments/',
   path: '/appointments/',
   getParentRoute: () => rootRouteImport,
-} as any).lazy(() =>
-  import('./pages/appointments/index.lazy').then((d) => d.Route),
-)
+} as any).lazy(() => import('./pages/appointments/index.lazy').then((d) => d.Route));
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexLazyRoute
-  '/appointments/': typeof AppointmentsIndexLazyRoute
-  '/billing/': typeof BillingIndexLazyRoute
-  '/patients/': typeof PatientsIndexLazyRoute
+  '/': typeof IndexLazyRoute;
+  '/appointments/': typeof AppointmentsIndexLazyRoute;
+  '/billing/': typeof BillingIndexLazyRoute;
+  '/patients/': typeof PatientsIndexLazyRoute;
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexLazyRoute
-  '/appointments': typeof AppointmentsIndexLazyRoute
-  '/billing': typeof BillingIndexLazyRoute
-  '/patients': typeof PatientsIndexLazyRoute
+  '/': typeof IndexLazyRoute;
+  '/appointments': typeof AppointmentsIndexLazyRoute;
+  '/billing': typeof BillingIndexLazyRoute;
+  '/patients': typeof PatientsIndexLazyRoute;
 }
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport
-  '/': typeof IndexLazyRoute
-  '/appointments/': typeof AppointmentsIndexLazyRoute
-  '/billing/': typeof BillingIndexLazyRoute
-  '/patients/': typeof PatientsIndexLazyRoute
+  __root__: typeof rootRouteImport;
+  '/': typeof IndexLazyRoute;
+  '/appointments/': typeof AppointmentsIndexLazyRoute;
+  '/billing/': typeof BillingIndexLazyRoute;
+  '/patients/': typeof PatientsIndexLazyRoute;
 }
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/appointments/' | '/billing/' | '/patients/'
-  fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/appointments' | '/billing' | '/patients'
-  id: '__root__' | '/' | '/appointments/' | '/billing/' | '/patients/'
-  fileRoutesById: FileRoutesById
+  fileRoutesByFullPath: FileRoutesByFullPath;
+  fullPaths: '/' | '/appointments/' | '/billing/' | '/patients/';
+  fileRoutesByTo: FileRoutesByTo;
+  to: '/' | '/appointments' | '/billing' | '/patients';
+  id: '__root__' | '/' | '/appointments/' | '/billing/' | '/patients/';
+  fileRoutesById: FileRoutesById;
 }
 export interface RootRouteChildren {
-  IndexLazyRoute: typeof IndexLazyRoute
-  AppointmentsIndexLazyRoute: typeof AppointmentsIndexLazyRoute
-  BillingIndexLazyRoute: typeof BillingIndexLazyRoute
-  PatientsIndexLazyRoute: typeof PatientsIndexLazyRoute
+  IndexLazyRoute: typeof IndexLazyRoute;
+  AppointmentsIndexLazyRoute: typeof AppointmentsIndexLazyRoute;
+  BillingIndexLazyRoute: typeof BillingIndexLazyRoute;
+  PatientsIndexLazyRoute: typeof PatientsIndexLazyRoute;
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
     '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexLazyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+      id: '/';
+      path: '/';
+      fullPath: '/';
+      preLoaderRoute: typeof IndexLazyRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     '/patients/': {
-      id: '/patients/'
-      path: '/patients'
-      fullPath: '/patients/'
-      preLoaderRoute: typeof PatientsIndexLazyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+      id: '/patients/';
+      path: '/patients';
+      fullPath: '/patients/';
+      preLoaderRoute: typeof PatientsIndexLazyRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     '/billing/': {
-      id: '/billing/'
-      path: '/billing'
-      fullPath: '/billing/'
-      preLoaderRoute: typeof BillingIndexLazyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+      id: '/billing/';
+      path: '/billing';
+      fullPath: '/billing/';
+      preLoaderRoute: typeof BillingIndexLazyRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     '/appointments/': {
-      id: '/appointments/'
-      path: '/appointments'
-      fullPath: '/appointments/'
-      preLoaderRoute: typeof AppointmentsIndexLazyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+      id: '/appointments/';
+      path: '/appointments';
+      fullPath: '/appointments/';
+      preLoaderRoute: typeof AppointmentsIndexLazyRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
   }
 }
 
@@ -112,7 +110,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppointmentsIndexLazyRoute: AppointmentsIndexLazyRoute,
   BillingIndexLazyRoute: BillingIndexLazyRoute,
   PatientsIndexLazyRoute: PatientsIndexLazyRoute,
-}
+};
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>()
+  ._addFileTypes<FileRouteTypes>();

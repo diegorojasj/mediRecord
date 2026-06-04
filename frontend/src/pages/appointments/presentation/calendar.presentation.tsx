@@ -7,44 +7,25 @@ import {
   isSameDay,
   startOfDay,
   startOfWeek,
-} from "date-fns"
-import {
-  ChevronLeft,
-  ChevronRight,
-  RefreshCw,
-  Search,
-} from "lucide-react"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+} from 'date-fns';
+import { ChevronLeft, ChevronRight, RefreshCw, Search } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { Skeleton } from "@/components/ui/skeleton"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
-import { cn } from "@/lib/utils"
-import type {
-  Appointment,
-  AppointmentStatus,
-} from "@/types/appointments_type"
-import type {
-  CalendarDateSelection,
-  CalendarEvent,
-  CalendarView,
-} from "./calendar/calendar_types"
-import {
-  STATUS_ORDER,
-  WEEK_STARTS_ON,
-} from "./calendar/calendar_constants"
+} from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
+import type { Appointment, AppointmentStatus } from '@/types/appointments_type';
+import type { CalendarDateSelection, CalendarEvent, CalendarView } from './calendar/calendar_types';
+import { STATUS_ORDER, WEEK_STARTS_ON } from './calendar/calendar_constants';
 import {
   dateKey,
   formatStatus,
@@ -52,21 +33,21 @@ import {
   statusStyle,
   toCalendarEvent,
   visibleRangeLabel,
-} from "./calendar/calendar_functions"
-import MobileStatusStrip from "./calendar/mobileStatusStrip"
-import MonthView from "./calendar/monthView"
-import TimeGridView from "./calendar/timeGridView"
-import ScheduleView from "./calendar/scheduleView"
-import AppointmentDetails from "./calendar/appointmentDetails"
+} from './calendar/calendar_functions';
+import MobileStatusStrip from './calendar/mobileStatusStrip';
+import MonthView from './calendar/monthView';
+import TimeGridView from './calendar/timeGridView';
+import ScheduleView from './calendar/scheduleView';
+import AppointmentDetails from './calendar/appointmentDetails';
 
 function StatusFilters({
   statusCounts,
   toggleStatus,
   visibleStatuses,
 }: {
-  statusCounts: Record<AppointmentStatus, number>
-  toggleStatus: (status: AppointmentStatus) => void
-  visibleStatuses: Set<AppointmentStatus>
+  statusCounts: Record<AppointmentStatus, number>;
+  toggleStatus: (status: AppointmentStatus) => void;
+  visibleStatuses: Set<AppointmentStatus>;
 }) {
   return (
     <div className="space-y-1">
@@ -81,13 +62,13 @@ function StatusFilters({
             className="size-3.5 rounded border-border accent-[#1a73e8]"
             onChange={() => toggleStatus(status)}
           />
-          <span className={cn("size-2.5 rounded-full", statusStyle(status).dot)} />
+          <span className={cn('size-2.5 rounded-full', statusStyle(status).dot)} />
           <span className="min-w-0 flex-1 truncate">{formatStatus(status)}</span>
           <span className="text-muted-foreground">{statusCounts[status]}</span>
         </label>
       ))}
     </div>
-  )
+  );
 }
 
 const CalendarPresentation = ({
@@ -96,27 +77,28 @@ const CalendarPresentation = ({
   loading,
   onRefresh,
 }: {
-  appointments: Appointment[]
-  error?: string | null
-  loading?: boolean
-  onRefresh?: () => void
+  appointments: Appointment[];
+  error?: string | null;
+  loading?: boolean;
+  onRefresh?: () => void;
 }) => {
-  const today = startOfDay(new Date())
-  const [currentDate, setCurrentDate] = useState(today)
-  const [selectedDate, setSelectedDate] = useState(today)
-  const [selectedDateRange, setSelectedDateRange] = useState<CalendarDateSelection>(
-    () => ({ end: today, start: today })
-  )
-  const [dragDateRange, setDragDateRange] = useState<CalendarDateSelection | null>(null)
-  const [isSelectingDates, setIsSelectingDates] = useState(false)
-  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null)
-  const [searchQuery, setSearchQuery] = useState("")
-  const [view, setView] = useState<CalendarView>("month")
-  const dateSelectionAnchorRef = useRef<Date | null>(null)
-  const dateSelectionEndRef = useRef<Date | null>(null)
+  const today = startOfDay(new Date());
+  const [currentDate, setCurrentDate] = useState(today);
+  const [selectedDate, setSelectedDate] = useState(today);
+  const [selectedDateRange, setSelectedDateRange] = useState<CalendarDateSelection>(() => ({
+    end: today,
+    start: today,
+  }));
+  const [dragDateRange, setDragDateRange] = useState<CalendarDateSelection | null>(null);
+  const [isSelectingDates, setIsSelectingDates] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [view, setView] = useState<CalendarView>('month');
+  const dateSelectionAnchorRef = useRef<Date | null>(null);
+  const dateSelectionEndRef = useRef<Date | null>(null);
   const [visibleStatuses, setVisibleStatuses] = useState<Set<AppointmentStatus>>(
-    () => new Set(STATUS_ORDER)
-  )
+    () => new Set(STATUS_ORDER),
+  );
 
   const calendarEvents = useMemo(
     () =>
@@ -124,219 +106,213 @@ const CalendarPresentation = ({
         .map(toCalendarEvent)
         .filter((event): event is CalendarEvent => event !== null)
         .sort((a, b) => a.start.getTime() - b.start.getTime()),
-    [appointments]
-  )
+    [appointments],
+  );
 
   const filteredEvents = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase()
+    const query = searchQuery.trim().toLowerCase();
 
     return calendarEvents.filter((event) => {
-      const statusIsKnown = STATUS_ORDER.includes(event.status)
-      const statusVisible = !statusIsKnown || visibleStatuses.has(event.status)
-      const matchesSearch = !query || event.searchText.includes(query)
+      const statusIsKnown = STATUS_ORDER.includes(event.status);
+      const statusVisible = !statusIsKnown || visibleStatuses.has(event.status);
+      const matchesSearch = !query || event.searchText.includes(query);
 
-      return statusVisible && matchesSearch
-    })
-  }, [calendarEvents, searchQuery, visibleStatuses])
+      return statusVisible && matchesSearch;
+    });
+  }, [calendarEvents, searchQuery, visibleStatuses]);
 
-  const eventsByDay = useMemo(() => groupEventsByDay(filteredEvents), [filteredEvents])
+  const eventsByDay = useMemo(() => groupEventsByDay(filteredEvents), [filteredEvents]);
 
   const statusCounts = useMemo(() => {
-    const counts = Object.fromEntries(
-      STATUS_ORDER.map((status) => [status, 0])
-    ) as Record<AppointmentStatus, number>
+    const counts = Object.fromEntries(STATUS_ORDER.map((status) => [status, 0])) as Record<
+      AppointmentStatus,
+      number
+    >;
 
     for (const event of calendarEvents) {
       if (STATUS_ORDER.includes(event.status)) {
-        counts[event.status] += 1
+        counts[event.status] += 1;
       }
     }
 
-    return counts
-  }, [calendarEvents])
+    return counts;
+  }, [calendarEvents]);
 
-  const activeDateRange = dragDateRange ?? selectedDateRange
+  const activeDateRange = dragDateRange ?? selectedDateRange;
   const selectedRangeDays = useMemo(
     () =>
       eachDayOfInterval({
         end: activeDateRange.end,
         start: activeDateRange.start,
       }),
-    [activeDateRange]
-  )
+    [activeDateRange],
+  );
   const selectedRangeEvents = useMemo(
-    () =>
-      selectedRangeDays.flatMap((day) => eventsByDay.get(dateKey(day)) ?? []),
-    [eventsByDay, selectedRangeDays]
-  )
-  const selectionIsSingleDay = isSameDay(activeDateRange.start, activeDateRange.end)
+    () => selectedRangeDays.flatMap((day) => eventsByDay.get(dateKey(day)) ?? []),
+    [eventsByDay, selectedRangeDays],
+  );
+  const selectionIsSingleDay = isSameDay(activeDateRange.start, activeDateRange.end);
   const selectedRangeLabel = selectionIsSingleDay
-    ? format(activeDateRange.start, "EEEE, MMM d")
-    : `${format(activeDateRange.start, "MMM d")} - ${format(
+    ? format(activeDateRange.start, 'EEEE, MMM d')
+    : `${format(activeDateRange.start, 'MMM d')} - ${format(
         activeDateRange.end,
         activeDateRange.start.getFullYear() === activeDateRange.end.getFullYear()
-          ? "MMM d"
-          : "MMM d, yyyy"
-      )}`
+          ? 'MMM d'
+          : 'MMM d, yyyy',
+      )}`;
 
   const normalizeDateSelection = useCallback((start: Date, end: Date) => {
-    const normalizedStart = startOfDay(start)
-    const normalizedEnd = startOfDay(end)
+    const normalizedStart = startOfDay(start);
+    const normalizedEnd = startOfDay(end);
 
     if (normalizedStart.getTime() <= normalizedEnd.getTime()) {
-      return { end: normalizedEnd, start: normalizedStart }
+      return { end: normalizedEnd, start: normalizedStart };
     }
 
-    return { end: normalizedStart, start: normalizedEnd }
-  }, [])
+    return { end: normalizedStart, start: normalizedEnd };
+  }, []);
 
   const navigate = (direction: -1 | 1) => {
-    if (view === "month") {
-      setCurrentDate((date) => addMonths(date, direction))
-      return
+    if (view === 'month') {
+      setCurrentDate((date) => addMonths(date, direction));
+      return;
     }
 
-    if (view === "week") {
-      setCurrentDate((date) => addWeeks(date, direction))
-      return
+    if (view === 'week') {
+      setCurrentDate((date) => addWeeks(date, direction));
+      return;
     }
 
-    setCurrentDate((date) => addDays(date, direction))
-  }
+    setCurrentDate((date) => addDays(date, direction));
+  };
 
   const goToToday = () => {
-    const nextToday = startOfDay(new Date())
-    dateSelectionAnchorRef.current = null
-    dateSelectionEndRef.current = null
-    setCurrentDate(nextToday)
-    setSelectedDate(nextToday)
-    setSelectedDateRange({ end: nextToday, start: nextToday })
-    setDragDateRange(null)
-  }
+    const nextToday = startOfDay(new Date());
+    dateSelectionAnchorRef.current = null;
+    dateSelectionEndRef.current = null;
+    setCurrentDate(nextToday);
+    setSelectedDate(nextToday);
+    setSelectedDateRange({ end: nextToday, start: nextToday });
+    setDragDateRange(null);
+  };
 
   const selectDateRange = useCallback(
-    (
-      start: Date,
-      end: Date,
-      options: { updateCurrentDate?: boolean } = {}
-    ) => {
-      const nextRange = normalizeDateSelection(start, end)
-      dateSelectionAnchorRef.current = null
-      dateSelectionEndRef.current = null
-      setSelectedDate(nextRange.start)
-      setSelectedDateRange(nextRange)
-      setDragDateRange(null)
+    (start: Date, end: Date, options: { updateCurrentDate?: boolean } = {}) => {
+      const nextRange = normalizeDateSelection(start, end);
+      dateSelectionAnchorRef.current = null;
+      dateSelectionEndRef.current = null;
+      setSelectedDate(nextRange.start);
+      setSelectedDateRange(nextRange);
+      setDragDateRange(null);
       if (options.updateCurrentDate) {
-        setCurrentDate(nextRange.start)
+        setCurrentDate(nextRange.start);
       }
     },
-    [normalizeDateSelection]
-  )
+    [normalizeDateSelection],
+  );
 
   const selectDate = (date: Date) => {
-    selectDateRange(date, date)
-  }
+    selectDateRange(date, date);
+  };
 
   const selectDateAndNavigate = (date: Date) => {
-    selectDateRange(date, date, { updateCurrentDate: true })
-  }
+    selectDateRange(date, date, { updateCurrentDate: true });
+  };
 
   const beginDateSelection = useCallback((date: Date) => {
-    const day = startOfDay(date)
-    const nextRange = { end: day, start: day }
+    const day = startOfDay(date);
+    const nextRange = { end: day, start: day };
 
-    dateSelectionAnchorRef.current = day
-    dateSelectionEndRef.current = day
-    setSelectedDate(day)
-    setDragDateRange(nextRange)
-    setIsSelectingDates(true)
-    setSelectedEvent(null)
-  }, [])
+    dateSelectionAnchorRef.current = day;
+    dateSelectionEndRef.current = day;
+    setSelectedDate(day);
+    setDragDateRange(nextRange);
+    setIsSelectingDates(true);
+    setSelectedEvent(null);
+  }, []);
 
   const moveDateSelection = useCallback(
     (date: Date) => {
-      const anchor = dateSelectionAnchorRef.current
-      if (!anchor) return
+      const anchor = dateSelectionAnchorRef.current;
+      if (!anchor) return;
 
-      const day = startOfDay(date)
-      dateSelectionEndRef.current = day
-      setSelectedDate(day)
-      setDragDateRange(normalizeDateSelection(anchor, day))
+      const day = startOfDay(date);
+      dateSelectionEndRef.current = day;
+      setSelectedDate(day);
+      setDragDateRange(normalizeDateSelection(anchor, day));
     },
-    [normalizeDateSelection]
-  )
+    [normalizeDateSelection],
+  );
 
   const scrollMonth = useCallback(
     (direction: -1 | 1, selectionDate?: Date) => {
-      setCurrentDate((date) => addMonths(date, direction))
+      setCurrentDate((date) => addMonths(date, direction));
 
       if (selectionDate && dateSelectionAnchorRef.current) {
-        moveDateSelection(selectionDate)
+        moveDateSelection(selectionDate);
       }
     },
-    [moveDateSelection]
-  )
+    [moveDateSelection],
+  );
 
   const commitDateSelection = useCallback(() => {
-    const anchor = dateSelectionAnchorRef.current
-    const end = dateSelectionEndRef.current
+    const anchor = dateSelectionAnchorRef.current;
+    const end = dateSelectionEndRef.current;
 
     if (!anchor || !end) {
-      setDragDateRange(null)
-      setIsSelectingDates(false)
-      return
+      setDragDateRange(null);
+      setIsSelectingDates(false);
+      return;
     }
 
-    const nextRange = normalizeDateSelection(anchor, end)
-    dateSelectionAnchorRef.current = null
-    dateSelectionEndRef.current = null
-    setSelectedDate(nextRange.start)
-    setSelectedDateRange(nextRange)
-    setDragDateRange(null)
-    setIsSelectingDates(false)
-  }, [normalizeDateSelection])
+    const nextRange = normalizeDateSelection(anchor, end);
+    dateSelectionAnchorRef.current = null;
+    dateSelectionEndRef.current = null;
+    setSelectedDate(nextRange.start);
+    setSelectedDateRange(nextRange);
+    setDragDateRange(null);
+    setIsSelectingDates(false);
+  }, [normalizeDateSelection]);
 
   useEffect(() => {
-    if (!isSelectingDates) return
+    if (!isSelectingDates) return;
 
-    window.addEventListener("pointerup", commitDateSelection)
-    window.addEventListener("pointercancel", commitDateSelection)
+    window.addEventListener('pointerup', commitDateSelection);
+    window.addEventListener('pointercancel', commitDateSelection);
 
     return () => {
-      window.removeEventListener("pointerup", commitDateSelection)
-      window.removeEventListener("pointercancel", commitDateSelection)
-    }
-  }, [commitDateSelection, isSelectingDates])
+      window.removeEventListener('pointerup', commitDateSelection);
+      window.removeEventListener('pointercancel', commitDateSelection);
+    };
+  }, [commitDateSelection, isSelectingDates]);
 
   const handleViewChange = (nextView: CalendarView) => {
-    dateSelectionAnchorRef.current = null
-    dateSelectionEndRef.current = null
-    setView(nextView)
-    setDragDateRange(null)
-    setIsSelectingDates(false)
-  }
+    dateSelectionAnchorRef.current = null;
+    dateSelectionEndRef.current = null;
+    setView(nextView);
+    setDragDateRange(null);
+    setIsSelectingDates(false);
+  };
 
   const toggleStatus = (status: AppointmentStatus) => {
     setVisibleStatuses((previous) => {
-      const next = new Set(previous)
-      if (next.has(status)) next.delete(status)
-      else next.add(status)
-      return next
-    })
-  }
+      const next = new Set(previous);
+      if (next.has(status)) next.delete(status);
+      else next.add(status);
+      return next;
+    });
+  };
 
   const weekDays = useMemo(() => {
-    const start = startOfWeek(currentDate, { weekStartsOn: WEEK_STARTS_ON })
-    return Array.from({ length: 7 }, (_, index) => addDays(start, index))
-  }, [currentDate])
+    const start = startOfWeek(currentDate, { weekStartsOn: WEEK_STARTS_ON });
+    return Array.from({ length: 7 }, (_, index) => addDays(start, index));
+  }, [currentDate]);
 
   return (
     <section className="relative flex h-full min-h-0 w-full max-w-full min-w-0 overflow-hidden rounded-md border bg-background text-left text-foreground shadow-sm">
       <aside className="hidden w-64 shrink-0 overflow-y-auto border-r bg-background p-4 2xl:block">
         <div className="mb-5 rounded-md border bg-muted/20 p-3">
-          <p className="text-xs font-semibold text-foreground">
-            {selectedRangeLabel}
-          </p>
+          <p className="text-xs font-semibold text-foreground">{selectedRangeLabel}</p>
           {!selectionIsSingleDay && (
             <p className="mt-1 text-xs text-muted-foreground">
               {selectedRangeDays.length} days selected
@@ -346,7 +322,7 @@ const CalendarPresentation = ({
             {selectedRangeEvents.length}
           </p>
           <p className="text-xs text-muted-foreground">
-            {selectedRangeEvents.length === 1 ? "appointment" : "appointments"}
+            {selectedRangeEvents.length === 1 ? 'appointment' : 'appointments'}
           </p>
         </div>
 
@@ -368,12 +344,7 @@ const CalendarPresentation = ({
             </Button>
             <Tooltip delayDuration={500}>
               <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => navigate(-1)}
-                >
+                <Button type="button" variant="ghost" size="icon" onClick={() => navigate(-1)}>
                   <ChevronLeft className="size-4" />
                   <span className="sr-only">Previous period</span>
                 </Button>
@@ -382,12 +353,7 @@ const CalendarPresentation = ({
             </Tooltip>
             <Tooltip delayDuration={500}>
               <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => navigate(1)}
-                >
+                <Button type="button" variant="ghost" size="icon" onClick={() => navigate(1)}>
                   <ChevronRight className="size-4" />
                   <span className="sr-only">Next period</span>
                 </Button>
@@ -412,16 +378,13 @@ const CalendarPresentation = ({
             <Tooltip delayDuration={500}>
               <TooltipTrigger asChild>
                 <Button type="button" variant="ghost" size="icon" onClick={onRefresh}>
-                  <RefreshCw className={cn("size-4", loading && "animate-spin")} />
+                  <RefreshCw className={cn('size-4', loading && 'animate-spin')} />
                   <span className="sr-only">Refresh appointments</span>
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Refresh</TooltipContent>
             </Tooltip>
-            <Select
-              value={view}
-              onValueChange={(value) => handleViewChange(value as CalendarView)}
-            >
+            <Select value={view} onValueChange={(value) => handleViewChange(value as CalendarView)}>
               <SelectTrigger className="h-8 w-[6.5rem] shrink-0 sm:w-32" aria-label="Calendar view">
                 <SelectValue />
               </SelectTrigger>
@@ -448,7 +411,7 @@ const CalendarPresentation = ({
         )}
 
         <div className="min-h-0 flex-1 overflow-auto">
-          {view === "month" && (
+          {view === 'month' && (
             <MonthView
               currentDate={currentDate}
               dateSelection={activeDateRange}
@@ -464,7 +427,7 @@ const CalendarPresentation = ({
               onEventSelect={setSelectedEvent}
             />
           )}
-          {view === "week" && (
+          {view === 'week' && (
             <TimeGridView
               dateSelection={activeDateRange}
               days={weekDays}
@@ -477,7 +440,7 @@ const CalendarPresentation = ({
               onEventSelect={setSelectedEvent}
             />
           )}
-          {view === "day" && (
+          {view === 'day' && (
             <TimeGridView
               dateSelection={activeDateRange}
               days={[currentDate]}
@@ -490,7 +453,7 @@ const CalendarPresentation = ({
               onEventSelect={setSelectedEvent}
             />
           )}
-          {view === "schedule" && (
+          {view === 'schedule' && (
             <ScheduleView
               currentDate={currentDate}
               eventsByDay={eventsByDay}
@@ -517,7 +480,7 @@ const CalendarPresentation = ({
         <AppointmentDetails event={selectedEvent} onClose={() => setSelectedEvent(null)} />
       )}
     </section>
-  )
-}
+  );
+};
 
-export default CalendarPresentation
+export default CalendarPresentation;

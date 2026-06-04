@@ -1,26 +1,26 @@
-import type { Patient } from "@/types/patients_type"
-import type { FormState } from "@/pages/patients/presentation/creationForm/creationForm_types"
+import type { Patient } from '@/types/patients_type';
+import type { FormState } from '@/pages/patients/presentation/creationForm/creationForm_types';
 
-const BASE = "/api/patients"
+const BASE = '/api/patients';
 
-export type SelectOption = { value: string; label: string }
+export type SelectOption = { value: string; label: string };
 
 function toOptions(values: string[]): SelectOption[] {
-  return values.map(v => ({ value: v, label: v.charAt(0).toUpperCase() + v.slice(1) }))
+  return values.map((v) => ({ value: v, label: v.charAt(0).toUpperCase() + v.slice(1) }));
 }
 
 async function fetchConst(path: string): Promise<SelectOption[]> {
-  const res = await fetch(`${BASE}${path}`)
-  if (!res.ok) throw new Error(`${res.status}`)
-  return toOptions(await res.json())
+  const res = await fetch(`${BASE}${path}`);
+  if (!res.ok) throw new Error(`${res.status}`);
+  return toOptions(await res.json());
 }
 
-export const getConstSex = () => fetchConst("/sex")
-export const getConstBloodGroup = () => fetchConst("/blood-group")
-export const getConstMaritalStatus = () => fetchConst("/marital-status")
-export const getConstEducationLevel = () => fetchConst("/education-level")
-export const getConstInsuranceType = () => fetchConst("/insurance-type")
-export const getConstPrimaryLanguage = () => fetchConst("/primary-language")
+export const getConstSex = () => fetchConst('/sex');
+export const getConstBloodGroup = () => fetchConst('/blood-group');
+export const getConstMaritalStatus = () => fetchConst('/marital-status');
+export const getConstEducationLevel = () => fetchConst('/education-level');
+export const getConstInsuranceType = () => fetchConst('/insurance-type');
+export const getConstPrimaryLanguage = () => fetchConst('/primary-language');
 
 export async function getAllPatientOptions() {
   const [sex, bloodGroup, maritalStatus, educationLevel, insuranceType, primaryLanguage] =
@@ -31,36 +31,36 @@ export async function getAllPatientOptions() {
       getConstEducationLevel(),
       getConstInsuranceType(),
       getConstPrimaryLanguage(),
-    ])
-  return { sex, bloodGroup, maritalStatus, educationLevel, insuranceType, primaryLanguage }
+    ]);
+  return { sex, bloodGroup, maritalStatus, educationLevel, insuranceType, primaryLanguage };
 }
 
-export type PatientOptions = Awaited<ReturnType<typeof getAllPatientOptions>>
+export type PatientOptions = Awaited<ReturnType<typeof getAllPatientOptions>>;
 
 export async function getPatients(): Promise<Patient[]> {
-  const res = await fetch(`${BASE}/`)
-  if (!res.ok) throw new Error(`${res.status}`)
-  return res.json()
+  const res = await fetch(`${BASE}/`);
+  if (!res.ok) throw new Error(`${res.status}`);
+  return res.json();
 }
 
 export async function createPatient(form: FormState): Promise<Patient> {
   const res = await fetch(`${BASE}/`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(formToPayload(form)),
-  })
-  if (!res.ok) throw new Error(`${res.status}`)
-  return res.json()
+  });
+  if (!res.ok) throw new Error(`${res.status}`);
+  return res.json();
 }
 
 export async function updatePatient(id: string, form: FormState): Promise<Patient> {
   const res = await fetch(`${BASE}/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(formToPayload(form)),
-  })
-  if (!res.ok) throw new Error(`${res.status}`)
-  return res.json()
+  });
+  if (!res.ok) throw new Error(`${res.status}`);
+  return res.json();
 }
 
 function formToPayload(form: FormState) {
@@ -101,10 +101,12 @@ function formToPayload(form: FormState) {
     ...(form.insurance_type && {
       health_insurance: {
         type: form.insurance_type,
-        ...(form.insurance_affiliation_number && { affiliation_number: form.insurance_affiliation_number }),
+        ...(form.insurance_affiliation_number && {
+          affiliation_number: form.insurance_affiliation_number,
+        }),
         ...(form.insurance_provider && { provider: form.insurance_provider }),
       },
     }),
     ...(form.administrative_notes && { administrative_notes: form.administrative_notes }),
-  }
+  };
 }

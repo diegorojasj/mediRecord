@@ -1,19 +1,19 @@
-import { useMemo } from "react"
-import type { CalendarEvent, EventMap } from "./calendar_types"
-import { addDays, eachDayOfInterval, format, isToday, startOfDay } from "date-fns"
-import { dateKey, eventTitle, formatStatus, shortId, statusStyle } from "./calendar_functions"
-import { cn } from "@/lib/utils"
+import { useMemo } from 'react';
+import type { CalendarEvent, EventMap } from './calendar_types';
+import { addDays, eachDayOfInterval, format, isToday, startOfDay } from 'date-fns';
+import { dateKey, eventTitle, formatStatus, shortId, statusStyle } from './calendar_functions';
+import { cn } from '@/lib/utils';
 
-const ScheduleView =({
+const ScheduleView = ({
   currentDate,
   eventsByDay,
   onDateSelect,
   onEventSelect,
 }: {
-  currentDate: Date
-  eventsByDay: EventMap
-  onDateSelect: (date: Date) => void
-  onEventSelect: (event: CalendarEvent) => void
+  currentDate: Date;
+  eventsByDay: EventMap;
+  onDateSelect: (date: Date) => void;
+  onEventSelect: (event: CalendarEvent) => void;
 }) => {
   const days = useMemo(
     () =>
@@ -21,32 +21,28 @@ const ScheduleView =({
         end: addDays(startOfDay(currentDate), 20),
         start: startOfDay(currentDate),
       }),
-    [currentDate]
-  )
+    [currentDate],
+  );
 
   return (
     <div className="h-full overflow-auto p-2 sm:p-4">
       <div className="mx-auto max-w-5xl divide-y rounded-md border bg-background">
         {days.map((day) => {
-          const dayEvents = eventsByDay.get(dateKey(day)) ?? []
+          const dayEvents = eventsByDay.get(dateKey(day)) ?? [];
 
           return (
             <div key={dateKey(day)} className="grid gap-3 p-3 sm:grid-cols-[9rem_1fr] sm:p-4">
-              <button
-                type="button"
-                className="text-left"
-                onClick={() => onDateSelect(day)}
-              >
+              <button type="button" className="text-left" onClick={() => onDateSelect(day)}>
                 <span className="block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  {format(day, "EEE")}
+                  {format(day, 'EEE')}
                 </span>
                 <span
                   className={cn(
-                    "mt-1 inline-flex items-baseline gap-2 rounded-full px-2 py-1 text-sm font-semibold",
-                    isToday(day) ? "bg-[#1a73e8] text-white" : "text-foreground"
+                    'mt-1 inline-flex items-baseline gap-2 rounded-full px-2 py-1 text-sm font-semibold',
+                    isToday(day) ? 'bg-[#1a73e8] text-white' : 'text-foreground',
                   )}
                 >
-                  {format(day, "MMM d")}
+                  {format(day, 'MMM d')}
                 </span>
               </button>
               <div className="space-y-2">
@@ -62,8 +58,8 @@ const ScheduleView =({
                   >
                     <span
                       className={cn(
-                        "size-2.5 shrink-0 rounded-full",
-                        statusStyle(event.status).dot
+                        'size-2.5 shrink-0 rounded-full',
+                        statusStyle(event.status).dot,
                       )}
                     />
                     <span className="min-w-0 flex-1">
@@ -71,14 +67,14 @@ const ScheduleView =({
                         {eventTitle(event)}
                       </span>
                       <span className="block text-xs text-muted-foreground">
-                        {format(event.start, "h:mm a")} - {format(event.end, "h:mm a")} · Patient{" "}
+                        {format(event.start, 'h:mm a')} - {format(event.end, 'h:mm a')} · Patient{' '}
                         {shortId(event.patient_id)}
                       </span>
                     </span>
                     <span
                       className={cn(
-                        "hidden rounded-full border px-2 py-0.5 text-[11px] font-semibold sm:inline-flex",
-                        statusStyle(event.status).badge
+                        'hidden rounded-full border px-2 py-0.5 text-[11px] font-semibold sm:inline-flex',
+                        statusStyle(event.status).badge,
                       )}
                     >
                       {formatStatus(event.status)}
@@ -87,11 +83,11 @@ const ScheduleView =({
                 ))}
               </div>
             </div>
-          )
+          );
         })}
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default ScheduleView
+export default ScheduleView;

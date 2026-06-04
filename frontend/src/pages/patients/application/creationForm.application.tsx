@@ -1,53 +1,51 @@
-import { useState } from "react"
-import type { FormState } from "../presentation/creationForm/creationForm_types"
-import { INITIAL_STATE } from "../presentation/creationForm/creationForm_initialState"
-import CreationFormPresentation from "../presentation/creationForm.presentation"
-import { createPatient, updatePatient, type PatientOptions } from "@/lib/api/patients"
+import { useState } from 'react';
+import type { FormState } from '../presentation/creationForm/creationForm_types';
+import { INITIAL_STATE } from '../presentation/creationForm/creationForm_initialState';
+import CreationFormPresentation from '../presentation/creationForm.presentation';
+import { createPatient, updatePatient, type PatientOptions } from '@/lib/api/patients';
 
-import { Button } from "@/components/ui/button"
-import {
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-} from "@/components/ui/sheet"
+import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
-const CreationFormApplication = ({
-  initialData,
-  patientId,
-  options,
-  onClose,
-  onSaved,
-}: {
-  initialData?: FormState
-  patientId?: string
-  options: PatientOptions
-  onClose?: () => void
-  onSaved?: () => void
-} = {} as never) => {
-  const [form, setForm] = useState<FormState>(initialData ?? INITIAL_STATE)
-  const [open, setOpen] = useState(!!initialData)
+const CreationFormApplication = (
+  {
+    initialData,
+    patientId,
+    options,
+    onClose,
+    onSaved,
+  }: {
+    initialData?: FormState;
+    patientId?: string;
+    options: PatientOptions;
+    onClose?: () => void;
+    onSaved?: () => void;
+  } = {} as never,
+) => {
+  const [form, setForm] = useState<FormState>(initialData ?? INITIAL_STATE);
+  const [open, setOpen] = useState(!!initialData);
 
-  const set = (key: keyof FormState) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-      setForm((prev) => ({ ...prev, [key]: e.target.value }))
+  const set =
+    (key: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+      setForm((prev) => ({ ...prev, [key]: e.target.value }));
 
   const setSelect = (key: keyof FormState) => (value: string) =>
-    setForm((prev) => ({ ...prev, [key]: value }))
+    setForm((prev) => ({ ...prev, [key]: value }));
 
   const onSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
-    e.preventDefault()
+    e.preventDefault();
     try {
       if (patientId) {
-        await updatePatient(patientId, form)
+        await updatePatient(patientId, form);
       } else {
-        await createPatient(form)
+        await createPatient(form);
       }
-      setOpen(false)
-      onSaved?.()
+      setOpen(false);
+      onSaved?.();
     } catch (err) {
-      console.error("Failed to save patient:", err)
+      console.error('Failed to save patient:', err);
     }
-  }
+  };
 
   const formOptions = {
     sex: options.sex,
@@ -56,10 +54,19 @@ const CreationFormApplication = ({
     bloodGroup: options.bloodGroup,
     primaryLanguage: options.primaryLanguage,
     insuranceType: options.insuranceType,
-  }
+  };
 
   return (
-    <Sheet open={open} onOpenChange={(isOpen) => { setOpen(isOpen); if (!isOpen) { setForm(initialData ?? INITIAL_STATE); onClose?.() } }}>
+    <Sheet
+      open={open}
+      onOpenChange={(isOpen) => {
+        setOpen(isOpen);
+        if (!isOpen) {
+          setForm(initialData ?? INITIAL_STATE);
+          onClose?.();
+        }
+      }}
+    >
       <SheetTrigger asChild>
         <Button variant="outline">Register Patient</Button>
       </SheetTrigger>
@@ -73,7 +80,7 @@ const CreationFormApplication = ({
         />
       </SheetContent>
     </Sheet>
-  )
-}
+  );
+};
 
-export default CreationFormApplication
+export default CreationFormApplication;

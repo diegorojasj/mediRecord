@@ -1,14 +1,19 @@
-"use client"
+'use client';
 
-import { Search } from "lucide-react"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
-const SearchInput = ({ label="Search", placeholder="Search...", value, onChange } : {
-  label?: string
-  placeholder?: string
-  value?: string
-  onChange?: (v: string) => void
+const SearchInput = ({
+  label = 'Search',
+  placeholder = 'Search...',
+  value,
+  onChange,
+}: {
+  label?: string;
+  placeholder?: string;
+  value?: string;
+  onChange?: (v: string) => void;
 }) => (
   <div className="w-full max-w-sm space-y-2">
     <Label>{label}</Label>
@@ -19,10 +24,10 @@ const SearchInput = ({ label="Search", placeholder="Search...", value, onChange 
         placeholder={placeholder}
         type="search"
         value={value}
-        onChange={e => onChange?.(e.target.value)}
+        onChange={(e) => onChange?.(e.target.value)}
       />
     </div>
   </div>
-)
+);
 
-export default SearchInput
+export default SearchInput;

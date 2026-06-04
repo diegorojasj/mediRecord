@@ -1,5 +1,5 @@
-import { Outlet, createRootRoute } from '@tanstack/react-router'
-import Layout from '@/layout'
+import { Outlet, createRootRoute } from '@tanstack/react-router';
+import Layout from '@/layout';
 
 export const Route = createRootRoute({
   component: () => (
@@ -7,4 +7,4 @@ export const Route = createRootRoute({
       <Outlet />
     </Layout>
   ),
-})
+});
