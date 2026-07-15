@@ -59,7 +59,7 @@ const MonthView = ({
   dateSelection: CalendarDateSelection;
   eventsByDay: EventMap;
   onDateSelect: (date: Date) => void;
-  onDateSelectionEnd: () => void;
+  onDateSelectionEnd: (position: { x: number; y: number }) => void;
   onDateSelectionMove: (date: Date) => void;
   onDateSelectionStart: (date: Date) => void;
   onDateViewOpen: (date: Date) => void;
@@ -143,7 +143,7 @@ const MonthView = ({
               }}
               onPointerUp={(event) => {
                 if (event.button !== 0) return;
-                onDateSelectionEnd();
+                onDateSelectionEnd({ x: event.clientX, y: event.clientY });
               }}
               onPointerEnter={() => {
                 hoveredDayIndexRef.current = dayIndex;

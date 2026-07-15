@@ -26,7 +26,7 @@ const TimeGridView = ({
   days: Date[];
   eventsByDay: EventMap;
   onDateSelect: (date: Date) => void;
-  onDateSelectionEnd: () => void;
+  onDateSelectionEnd: (position: { x: number; y: number }) => void;
   onDateSelectionMove: (date: Date) => void;
   onDateSelectionStart: (date: Date) => void;
   onEventSelect: (event: CalendarEvent) => void;
@@ -67,7 +67,7 @@ const TimeGridView = ({
               }}
               onPointerUp={(event) => {
                 if (event.button !== 0) return;
-                onDateSelectionEnd();
+                onDateSelectionEnd({ x: event.clientX, y: event.clientY });
               }}
               onPointerEnter={() => onDateSelectionMove(day)}
             >
@@ -125,7 +125,7 @@ const TimeGridView = ({
               }}
               onPointerUp={(event) => {
                 if (event.button !== 0) return;
-                onDateSelectionEnd();
+                onDateSelectionEnd({ x: event.clientX, y: event.clientY });
               }}
               onPointerEnter={() => onDateSelectionMove(day)}
             >

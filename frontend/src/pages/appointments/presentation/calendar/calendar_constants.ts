@@ -1,4 +1,4 @@
-import type { AppointmentStatus, AppointmentType } from '@/types/appointments_type';
+import type { AppointmentStatus, AppointmentType, CancelledBy } from '@/types/appointments_type';
 
 export const WEEK_STARTS_ON = 0;
 export const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -28,11 +28,26 @@ export const STATUS_LABEL: Record<AppointmentStatus, string> = {
   no_show: 'No show',
 };
 
+export const TYPE_ORDER: AppointmentType[] = [
+  'first_visit',
+  'follow_up',
+  'procedure',
+  'teleconsult',
+];
+
 export const TYPE_LABEL: Record<AppointmentType, string> = {
   first_visit: 'First visit',
   follow_up: 'Follow-up',
   procedure: 'Procedure',
   teleconsult: 'Teleconsult',
+};
+
+export const CANCELLED_BY_ORDER: CancelledBy[] = ['patient', 'doctor', 'system'];
+
+export const CANCELLED_BY_LABEL: Record<CancelledBy, string> = {
+  patient: 'Patient',
+  doctor: 'Doctor',
+  system: 'System',
 };
 
 export const FALLBACK_STATUS = {

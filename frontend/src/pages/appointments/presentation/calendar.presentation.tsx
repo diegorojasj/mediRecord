@@ -9,9 +9,18 @@ import {
   startOfWeek,
 } from 'date-fns';
 import { ChevronLeft, ChevronRight, RefreshCw, Search } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type SyntheticEvent,
+} from 'react';
 
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -25,7 +34,15 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { cn } from '@/lib/utils';
 import type { Appointment, AppointmentStatus } from '@/types/appointments_type';
 import type { CalendarDateSelection, CalendarEvent, CalendarView } from './calendar/calendar_types';
-import { STATUS_ORDER, WEEK_STARTS_ON } from './calendar/calendar_constants';
+import {
+  CANCELLED_BY_LABEL,
+  CANCELLED_BY_ORDER,
+  STATUS_LABEL,
+  STATUS_ORDER,
+  TYPE_LABEL,
+  TYPE_ORDER,
+  WEEK_STARTS_ON,
+} from './calendar/calendar_constants';
 import {
   dateKey,
   formatStatus,
@@ -39,6 +56,18 @@ import MonthView from './calendar/monthView';
 import TimeGridView from './calendar/timeGridView';
 import ScheduleView from './calendar/scheduleView';
 import AppointmentDetails from './calendar/appointmentDetails';
+import SelectionMenu from './calendar/selectionMenu';
+import AppointmentFormPresentation from './appointmentForm.presentation';
+import type { FormState } from './appointmentForm/appointmentForm_types';
+import { INITIAL_STATE as APPOINTMENT_FORM_INITIAL_STATE } from './appointmentForm/appointmentForm_initialState';
+
+const APPOINTMENT_FORM_OPTIONS = {
+  type: TYPE_ORDER.map((value) => ({ value, label: TYPE_LABEL[value] })),
+  status: STATUS_ORDER.map((value) => ({ value, label: STATUS_LABEL[value] })),
+  cancelledBy: CANCELLED_BY_ORDER.map((value) => ({ value, label: CANCELLED_BY_LABEL[value] })),
+};
+
+const toDateTimeLocal = (date: Date) => format(date, "yyyy-MM-dd'T'HH:mm");
 
 function StatusFilters({
   statusCounts,
@@ -98,6 +127,14 @@ const CalendarPresentation = ({
   const dateSelectionEndRef = useRef<Date | null>(null);
   const [visibleStatuses, setVisibleStatuses] = useState<Set<AppointmentStatus>>(
     () => new Set(STATUS_ORDER),
+  );
+  const [selectionMenuPosition, setSelectionMenuPosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
+  const [isCreatingAppointment, setIsCreatingAppointment] = useState(false);
+  const [appointmentForm, setAppointmentForm] = useState<FormState>(
+    APPOINTMENT_FORM_INITIAL_STATE,
   );
 
   const calendarEvents = useMemo(
@@ -229,6 +266,7 @@ const CalendarPresentation = ({
     setDragDateRange(nextRange);
     setIsSelectingDates(true);
     setSelectedEvent(null);
+    setSelectionMenuPosition(null);
   }, []);
 
   const moveDateSelection = useCallback(
@@ -255,34 +293,47 @@ const CalendarPresentation = ({
     [moveDateSelection],
   );
 
-  const commitDateSelection = useCallback(() => {
-    const anchor = dateSelectionAnchorRef.current;
-    const end = dateSelectionEndRef.current;
+  const commitDateSelection = useCallback(
+    (position?: { x: number; y: number }) => {
+      const anchor = dateSelectionAnchorRef.current;
+      const end = dateSelectionEndRef.current;
 
-    if (!anchor || !end) {
+      if (!anchor || !end) {
+        setDragDateRange(null);
+        setIsSelectingDates(false);
+        return;
+      }
+
+      const nextRange = normalizeDateSelection(anchor, end);
+      dateSelectionAnchorRef.current = null;
+      dateSelectionEndRef.current = null;
+      setSelectedDate(nextRange.start);
+      setSelectedDateRange(nextRange);
       setDragDateRange(null);
       setIsSelectingDates(false);
-      return;
-    }
-
-    const nextRange = normalizeDateSelection(anchor, end);
-    dateSelectionAnchorRef.current = null;
-    dateSelectionEndRef.current = null;
-    setSelectedDate(nextRange.start);
-    setSelectedDateRange(nextRange);
-    setDragDateRange(null);
-    setIsSelectingDates(false);
-  }, [normalizeDateSelection]);
+      if (position) {
+        setSelectionMenuPosition(position);
+      }
+    },
+    [normalizeDateSelection],
+  );
 
   useEffect(() => {
     if (!isSelectingDates) return;
 
-    window.addEventListener('pointerup', commitDateSelection);
-    window.addEventListener('pointercancel', commitDateSelection);
+    const handleWindowPointerUp = (event: PointerEvent) => {
+      commitDateSelection({ x: event.clientX, y: event.clientY });
+    };
+    const handleWindowPointerCancel = () => {
+      commitDateSelection();
+    };
+
+    window.addEventListener('pointerup', handleWindowPointerUp);
+    window.addEventListener('pointercancel', handleWindowPointerCancel);
 
     return () => {
-      window.removeEventListener('pointerup', commitDateSelection);
-      window.removeEventListener('pointercancel', commitDateSelection);
+      window.removeEventListener('pointerup', handleWindowPointerUp);
+      window.removeEventListener('pointercancel', handleWindowPointerCancel);
     };
   }, [commitDateSelection, isSelectingDates]);
 
@@ -292,6 +343,12 @@ const CalendarPresentation = ({
     setView(nextView);
     setDragDateRange(null);
     setIsSelectingDates(false);
+    setSelectionMenuPosition(null);
+  };
+
+  const handleEventSelect = (event: CalendarEvent) => {
+    setSelectionMenuPosition(null);
+    setSelectedEvent(event);
   };
 
   const toggleStatus = (status: AppointmentStatus) => {
@@ -307,6 +364,34 @@ const CalendarPresentation = ({
     const start = startOfWeek(currentDate, { weekStartsOn: WEEK_STARTS_ON });
     return Array.from({ length: 7 }, (_, index) => addDays(start, index));
   }, [currentDate]);
+
+  const handleCreateAppointment = () => {
+    const start = new Date(activeDateRange.start);
+    start.setHours(9, 0, 0, 0);
+    const end = new Date(start);
+    end.setMinutes(end.getMinutes() + 30);
+
+    setAppointmentForm({
+      ...APPOINTMENT_FORM_INITIAL_STATE,
+      duration_minutes: '30',
+      end_datetime: toDateTimeLocal(end),
+      start_datetime: toDateTimeLocal(start),
+    });
+    setSelectionMenuPosition(null);
+    setIsCreatingAppointment(true);
+  };
+
+  const setAppointmentField =
+    (key: keyof FormState) => (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+      setAppointmentForm((previous) => ({ ...previous, [key]: e.target.value }));
+
+  const setAppointmentSelectField = (key: keyof FormState) => (value: string) =>
+    setAppointmentForm((previous) => ({ ...previous, [key]: value }));
+
+  const handleAppointmentFormSubmit = (event: SyntheticEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsCreatingAppointment(false);
+  };
 
   return (
     <section className="relative flex h-full min-h-0 w-full max-w-full min-w-0 overflow-hidden rounded-md border bg-background text-left text-foreground shadow-sm">
@@ -424,7 +509,7 @@ const CalendarPresentation = ({
               selectedDate={selectedDate}
               setView={handleViewChange}
               onDateSelect={selectDate}
-              onEventSelect={setSelectedEvent}
+              onEventSelect={handleEventSelect}
             />
           )}
           {view === 'week' && (
@@ -437,7 +522,7 @@ const CalendarPresentation = ({
               onDateSelectionStart={beginDateSelection}
               selectedDate={selectedDate}
               onDateSelect={selectDate}
-              onEventSelect={setSelectedEvent}
+              onEventSelect={handleEventSelect}
             />
           )}
           {view === 'day' && (
@@ -450,7 +535,7 @@ const CalendarPresentation = ({
               onDateSelectionStart={beginDateSelection}
               selectedDate={selectedDate}
               onDateSelect={selectDate}
-              onEventSelect={setSelectedEvent}
+              onEventSelect={handleEventSelect}
             />
           )}
           {view === 'schedule' && (
@@ -458,7 +543,7 @@ const CalendarPresentation = ({
               currentDate={currentDate}
               eventsByDay={eventsByDay}
               onDateSelect={selectDateAndNavigate}
-              onEventSelect={setSelectedEvent}
+              onEventSelect={handleEventSelect}
             />
           )}
         </div>
@@ -479,6 +564,26 @@ const CalendarPresentation = ({
       {selectedEvent && (
         <AppointmentDetails event={selectedEvent} onClose={() => setSelectedEvent(null)} />
       )}
+
+      {selectionMenuPosition && (
+        <SelectionMenu
+          position={selectionMenuPosition}
+          onClose={() => setSelectionMenuPosition(null)}
+          onCreateAppointment={handleCreateAppointment}
+        />
+      )}
+
+      <Dialog open={isCreatingAppointment} onOpenChange={setIsCreatingAppointment}>
+        <DialogContent className="flex max-h-[85vh] w-full flex-col overflow-hidden sm:max-w-xl">
+          <AppointmentFormPresentation
+            form={appointmentForm}
+            set={setAppointmentField}
+            setSelect={setAppointmentSelectField}
+            onSubmit={handleAppointmentFormSubmit}
+            options={APPOINTMENT_FORM_OPTIONS}
+          />
+        </DialogContent>
+      </Dialog>
     </section>
   );
 };
