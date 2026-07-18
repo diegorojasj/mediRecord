@@ -249,25 +249,32 @@ const CalendarPresentation = ({
   );
 
   const selectDate = (date: Date) => {
+    if (startOfDay(date).getTime() < today.getTime()) return;
     selectDateRange(date, date);
   };
 
   const selectDateAndNavigate = (date: Date) => {
+    if (startOfDay(date).getTime() < today.getTime()) return;
     selectDateRange(date, date, { updateCurrentDate: true });
   };
 
-  const beginDateSelection = useCallback((date: Date) => {
-    const day = startOfDay(date);
-    const nextRange = { end: day, start: day };
+  const beginDateSelection = useCallback(
+    (date: Date) => {
+      const day = startOfDay(date);
+      if (day.getTime() < today.getTime()) return;
 
-    dateSelectionAnchorRef.current = day;
-    dateSelectionEndRef.current = day;
-    setSelectedDate(day);
-    setDragDateRange(nextRange);
-    setIsSelectingDates(true);
-    setSelectedEvent(null);
-    setSelectionMenuPosition(null);
-  }, []);
+      const nextRange = { end: day, start: day };
+
+      dateSelectionAnchorRef.current = day;
+      dateSelectionEndRef.current = day;
+      setSelectedDate(day);
+      setDragDateRange(nextRange);
+      setIsSelectingDates(true);
+      setSelectedEvent(null);
+      setSelectionMenuPosition(null);
+    },
+    [today],
+  );
 
   const moveDateSelection = useCallback(
     (date: Date) => {
@@ -275,11 +282,13 @@ const CalendarPresentation = ({
       if (!anchor) return;
 
       const day = startOfDay(date);
+      if (day.getTime() < today.getTime()) return;
+
       dateSelectionEndRef.current = day;
       setSelectedDate(day);
       setDragDateRange(normalizeDateSelection(anchor, day));
     },
-    [normalizeDateSelection],
+    [normalizeDateSelection, today],
   );
 
   const scrollMonth = useCallback(
@@ -368,8 +377,8 @@ const CalendarPresentation = ({
   const handleCreateAppointment = () => {
     const start = new Date(activeDateRange.start);
     start.setHours(9, 0, 0, 0);
-    const end = new Date(start);
-    end.setMinutes(end.getMinutes() + 30);
+    const end = new Date(activeDateRange.end);
+    end.setHours(9, 30, 0, 0);
 
     setAppointmentForm({
       ...APPOINTMENT_FORM_INITIAL_STATE,

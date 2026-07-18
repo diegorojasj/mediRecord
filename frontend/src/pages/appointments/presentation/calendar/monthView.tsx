@@ -14,6 +14,7 @@ import {
   isSameDay,
   isSameMonth,
   isToday,
+  startOfDay,
   startOfMonth,
   startOfWeek,
 } from 'date-fns';
@@ -73,6 +74,7 @@ const MonthView = ({
   const wheelDeltaRef = useRef(0);
 
   const days = useMemo(() => getVisibleMonthDays(currentDate), [currentDate]);
+  const today = useMemo(() => startOfDay(new Date()), []);
 
   const handleWheel = (event: WheelEvent<HTMLDivElement>) => {
     if (event.ctrlKey) return;
@@ -119,6 +121,7 @@ const MonthView = ({
           const visibleEvents = dayEvents.slice(0, 3);
           const hiddenEvents = dayEvents.length - visibleEvents.length;
           const outside = !isSameMonth(day, currentDate);
+          const isPast = day.getTime() < today.getTime();
           const inSelection = dateIsInSelection(day, dateSelection);
           const selectionStart = isSameDay(day, dateSelection.start);
           const selectionEnd = isSameDay(day, dateSelection.end);
@@ -127,8 +130,10 @@ const MonthView = ({
             <div
               key={dateKey(day)}
               className={cn(
-                'min-h-0 cursor-pointer select-none overflow-hidden border-b border-r p-1 sm:p-1.5',
+                'min-h-0 select-none overflow-hidden border-b border-r p-1 sm:p-1.5',
+                isPast ? 'cursor-not-allowed' : 'cursor-pointer',
                 outside && 'bg-muted/20 text-muted-foreground',
+                isPast && !outside && 'bg-muted/10 text-muted-foreground',
                 inSelection && 'bg-sky-50',
                 inSelection && outside && 'bg-sky-50/70',
                 (selectionStart || selectionEnd || isSameDay(day, selectedDate)) &&
@@ -154,6 +159,7 @@ const MonthView = ({
                 type="button"
                 className={cn(
                   'mb-0.5 inline-flex size-6 items-center justify-center rounded-full text-[11px] font-medium transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 sm:mb-1 sm:size-7 sm:text-xs',
+                  isPast && 'cursor-not-allowed text-muted-foreground hover:bg-transparent',
                   isToday(day) && 'bg-[#1a73e8] text-white hover:bg-[#1967d2]',
                   inSelection && !isToday(day) && 'bg-sky-100 text-sky-800',
                   (selectionStart || selectionEnd) &&
