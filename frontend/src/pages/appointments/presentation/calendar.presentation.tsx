@@ -69,6 +69,11 @@ const APPOINTMENT_FORM_OPTIONS = {
 
 const toDateTimeLocal = (date: Date) => format(date, "yyyy-MM-dd'T'HH:mm");
 
+const parseDateOnly = (value: string) => {
+  const [year, month, day] = value.split('-').map(Number);
+  return new Date(year, month - 1, day);
+};
+
 function StatusFilters({
   statusCounts,
   toggleStatus,
@@ -390,6 +395,11 @@ const CalendarPresentation = ({
     setIsCreatingAppointment(true);
   };
 
+  const handleAppointmentDateRangeChange = (startDate: string, endDate: string) => {
+    if (!startDate || !endDate) return;
+    selectDateRange(parseDateOnly(startDate), parseDateOnly(endDate), { updateCurrentDate: true });
+  };
+
   const setAppointmentField =
     (key: keyof FormState) => (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       setAppointmentForm((previous) => ({ ...previous, [key]: e.target.value }));
@@ -589,6 +599,7 @@ const CalendarPresentation = ({
             set={setAppointmentField}
             setSelect={setAppointmentSelectField}
             onSubmit={handleAppointmentFormSubmit}
+            onDateRangeChange={handleAppointmentDateRangeChange}
             options={APPOINTMENT_FORM_OPTIONS}
           />
         </DialogContent>

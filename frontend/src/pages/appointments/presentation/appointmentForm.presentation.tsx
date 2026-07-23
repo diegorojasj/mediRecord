@@ -21,11 +21,34 @@ type FormOptions = {
   cancelledBy: SelectOption[];
 };
 
+const splitDateTime = (value: string) => {
+  const [date = '', time = ''] = value.split('T');
+  return { date, time: time.slice(0, 5) };
+};
+
+const combineDateTime = (date: string, time: string) => `${date}T${time || '00:00'}`;
+
+const todayDateString = () => {
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+};
+
+const currentTimeString = () => {
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2, '0');
+  const mm = String(now.getMinutes()).padStart(2, '0');
+  return `${hh}:${mm}`;
+};
+
 const AppointmentFormPresentation = ({
   form,
   set,
   setSelect,
   onSubmit,
+  onDateRangeChange,
   options,
 }: {
   form: FormState;
@@ -33,7 +56,47 @@ const AppointmentFormPresentation = ({
   set: (key: keyof FormState) => (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   setSelect: (key: keyof FormState) => (value: string) => void;
   onSubmit: (e: SyntheticEvent<HTMLFormElement>) => void;
+  onDateRangeChange?: (startDate: string, endDate: string) => void;
 }) => {
+  const startParts = splitDateTime(form.start_datetime);
+  const endParts = splitDateTime(form.end_datetime);
+  const todayDate = todayDateString();
+  const currentTime = currentTimeString();
+  const minEndDate = startParts.date > todayDate ? startParts.date : todayDate;
+  const minStartTime = startParts.date === todayDate ? currentTime : undefined;
+  const minEndTime = endParts.date === todayDate ? currentTime : undefined;
+
+  const setDateTimePart =
+    (key: 'start_datetime' | 'end_datetime', part: 'date' | 'time') =>
+    (e: ChangeEvent<HTMLInputElement>) => {
+      const parts = key === 'start_datetime' ? startParts : endParts;
+
+      const next =
+        part === 'date'
+          ? combineDateTime(e.target.value, parts.time)
+          : combineDateTime(parts.date, e.target.value);
+
+      set(key)({ target: { value: next } } as ChangeEvent<HTMLInputElement>);
+
+      const startPushesEnd =
+        key === 'start_datetime' && part === 'date' && e.target.value > endParts.date;
+      if (startPushesEnd) {
+        set('end_datetime')({
+          target: { value: combineDateTime(e.target.value, endParts.time) },
+        } as ChangeEvent<HTMLInputElement>);
+      }
+
+      if (part === 'date' && onDateRangeChange) {
+        const nextStartDate = key === 'start_datetime' ? e.target.value : startParts.date;
+        const nextEndDate = startPushesEnd
+          ? e.target.value
+          : key === 'end_datetime'
+            ? e.target.value
+            : endParts.date;
+        onDateRangeChange(nextStartDate, nextEndDate);
+      }
+    };
+
   return (
     <form onSubmit={onSubmit} className="flex h-full flex-col">
       <DialogHeader>
@@ -80,24 +143,46 @@ const AppointmentFormPresentation = ({
             <FieldGroup>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <Field>
-                  <Label htmlFor="start_datetime">Start *</Label>
-                  <Input
-                    id="start_datetime"
-                    type="datetime-local"
-                    value={form.start_datetime}
-                    onChange={set('start_datetime')}
-                    required
-                  />
+                  <Label htmlFor="start_date">Start *</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="start_date"
+                      type="date"
+                      min={todayDate}
+                      value={startParts.date}
+                      onChange={setDateTimePart('start_datetime', 'date')}
+                      required
+                    />
+                    <Input
+                      id="start_time"
+                      type="time"
+                      min={minStartTime}
+                      value={startParts.time}
+                      onChange={setDateTimePart('start_datetime', 'time')}
+                      required
+                    />
+                  </div>
                 </Field>
                 <Field>
-                  <Label htmlFor="end_datetime">End *</Label>
-                  <Input
-                    id="end_datetime"
-                    type="datetime-local"
-                    value={form.end_datetime}
-                    onChange={set('end_datetime')}
-                    required
-                  />
+                  <Label htmlFor="end_date">End *</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="end_date"
+                      type="date"
+                      min={minEndDate}
+                      value={endParts.date}
+                      onChange={setDateTimePart('end_datetime', 'date')}
+                      required
+                    />
+                    <Input
+                      id="end_time"
+                      type="time"
+                      min={minEndTime}
+                      value={endParts.time}
+                      onChange={setDateTimePart('end_datetime', 'time')}
+                      required
+                    />
+                  </div>
                 </Field>
               </div>
               <Field>
