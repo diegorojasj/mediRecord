@@ -1,4 +1,5 @@
 import os
+from typing import Any
 
 from beanie import init_beanie
 from fastapi import FastAPI
@@ -22,20 +23,20 @@ def connection_string() -> str:
     return f"mongodb://{user}:{password}@{host}:{port}/{database}?{'&'.join(params)}"
 
 
-def mongo_client() -> AsyncMongoClient:
-    pool_config = {
-        "maxPoolSize": 500,
-        "minPoolSize": 10,
-        "retryWrites": True,
-        "retryReads": True,
-        "serverSelectionTimeoutMS": 10000,
-        "connectTimeoutMS": 5000,
-        "socketTimeoutMS": 20000,
-        "waitQueueTimeoutMS": 10000,
-        "appName": "patients-service",
-        "maxIdleTimeMS": 30000,
-    }
-    return AsyncMongoClient(connection_string(), **pool_config)
+def mongo_client() -> AsyncMongoClient[dict[str, Any]]:
+    return AsyncMongoClient(
+        connection_string(),
+        maxPoolSize=500,
+        minPoolSize=10,
+        retryWrites=True,
+        retryReads=True,
+        serverSelectionTimeoutMS=10000,
+        connectTimeoutMS=5000,
+        socketTimeoutMS=20000,
+        waitQueueTimeoutMS=10000,
+        appName="patients-service",
+        maxIdleTimeMS=30000,
+    )
 
 
 async def _connection(app: FastAPI) -> None:

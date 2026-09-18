@@ -1,26 +1,15 @@
-import type { Patient } from '@/types/patients_type';
+import { fetchConst } from '@/lib/utils';
 import type { FormState } from '@/pages/patients/presentation/creationForm/creationForm_types';
+import type { Patient } from '@/types/patients_type';
 
 const BASE = '/api/patients';
 
-export type SelectOption = { value: string; label: string };
-
-function toOptions(values: string[]): SelectOption[] {
-  return values.map((v) => ({ value: v, label: v.charAt(0).toUpperCase() + v.slice(1) }));
-}
-
-async function fetchConst(path: string): Promise<SelectOption[]> {
-  const res = await fetch(`${BASE}${path}`);
-  if (!res.ok) throw new Error(`${res.status}`);
-  return toOptions(await res.json());
-}
-
-export const getConstSex = () => fetchConst('/sex');
-export const getConstBloodGroup = () => fetchConst('/blood-group');
-export const getConstMaritalStatus = () => fetchConst('/marital-status');
-export const getConstEducationLevel = () => fetchConst('/education-level');
-export const getConstInsuranceType = () => fetchConst('/insurance-type');
-export const getConstPrimaryLanguage = () => fetchConst('/primary-language');
+export const getConstSex = () => fetchConst(BASE, '/sex');
+export const getConstBloodGroup = () => fetchConst(BASE, '/blood-group');
+export const getConstMaritalStatus = () => fetchConst(BASE, '/marital-status');
+export const getConstEducationLevel = () => fetchConst(BASE, '/education-level');
+export const getConstInsuranceType = () => fetchConst(BASE, '/insurance-type');
+export const getConstPrimaryLanguage = () => fetchConst(BASE, '/primary-language');
 
 export async function getAllPatientOptions() {
   const [sex, bloodGroup, maritalStatus, educationLevel, insuranceType, primaryLanguage] =

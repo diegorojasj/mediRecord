@@ -5,18 +5,18 @@ from beanie import Indexed, PydanticObjectId
 from pydantic import EmailStr
 from pymongo import ASCENDING, DESCENDING, TEXT, IndexModel
 
+from ..constants.global_constants import BloodGroup, EducationLevel, MaritalStatus, PrimaryLanguage, Sex
 from .base import TimestampedDocument
-from .embedded import EmergencyContact, Address, HealthInsurance
-from ..constants.global_constants import Sex, MaritalStatus, EducationLevel, BloodGroup, PrimaryLanguage
+from .embedded import Address, EmergencyContact, HealthInsurance
 
 
 class Patient(TimestampedDocument):
     # Identification
     photo_url: Optional[str] = None
-    record_number: Annotated[str, Indexed(unique=True)]   # e.g. "EXP-2026-00123"
-    national_id: Annotated[str, Indexed(unique=True)]    # Identity document number
+    record_number: Annotated[str, Indexed(unique=True)]  # e.g. "EXP-2026-00123"
+    national_id: Annotated[str, Indexed(unique=True)]  # Identity document number
     national_id_issued_in: str
-    tax_id: Optional[str] = None                         # optional, for billing
+    tax_id: Optional[str] = None  # optional, for billing
 
     # Names (Bolivian pattern: two apellidos common)
     first_name: str
@@ -53,18 +53,23 @@ class Patient(TimestampedDocument):
     class Settings(TimestampedDocument.Settings):
         name = "patients"
         indexes = [
-            IndexModel([
-                ("first_surname", ASCENDING),
-                ("second_surname", ASCENDING),
-                ("first_name", ASCENDING),
-            ]),
-            IndexModel([
-                ("first_name", TEXT),
-                ("first_surname", TEXT),
-                ("second_surname", TEXT),
-                ("national_id", TEXT),
-                ("record_number", TEXT),
-            ], name="patient_text_search"),
+            IndexModel(
+                [
+                    ("first_surname", ASCENDING),
+                    ("second_surname", ASCENDING),
+                    ("first_name", ASCENDING),
+                ]
+            ),
+            IndexModel(
+                [
+                    ("first_name", TEXT),
+                    ("first_surname", TEXT),
+                    ("second_surname", TEXT),
+                    ("national_id", TEXT),
+                    ("record_number", TEXT),
+                ],
+                name="patient_text_search",
+            ),
             IndexModel([("is_active", ASCENDING)]),
             IndexModel([("created_at", DESCENDING)]),
         ]
