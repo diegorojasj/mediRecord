@@ -1,15 +1,14 @@
 import { addDays, endOfWeek, format, startOfWeek } from 'date-fns';
+import type { SelectOption } from '@/lib/utils';
+import type { Appointment, AppointmentStatus, AppointmentType } from '@/types/appointments_type';
 import {
   FALLBACK_STATUS,
   HOUR_HEIGHT,
-  STATUS_LABEL,
   STATUS_STYLE,
-  TYPE_LABEL,
   WEEK_STARTS_ON,
   WORKDAY_END_HOUR,
   WORKDAY_START_HOUR,
 } from './calendar_constants';
-import type { Appointment, AppointmentStatus, AppointmentType } from '@/types/appointments_type';
 import type { CalendarEvent, CalendarView, EventMap } from './calendar_types';
 
 export const dateKey = (date: Date) => {
@@ -21,14 +20,6 @@ export const labeliz = (value: string) => {
     .split('_')
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(' ');
-};
-
-export const formatStatus = (status: string) => {
-  return STATUS_LABEL[status as AppointmentStatus] ?? labeliz(status);
-};
-
-export const formatType = (type: string) => {
-  return TYPE_LABEL[type as AppointmentType] ?? labeliz(type);
 };
 
 export const statusStyle = (status: string) => {
@@ -83,8 +74,16 @@ export const groupEventsByDay = (events: CalendarEvent[]) => {
   return grouped;
 };
 
-export const eventTitle = (event: CalendarEvent) => {
-  return event.reason || formatType(event.type);
+export const formatType = (appointmentTypes: SelectOption<AppointmentType>[], type: AppointmentType) => {
+  return appointmentTypes.find((appointmentType) => appointmentType.value === type)?.label
+};
+
+export const formatStatus = (appointmentStatuses: SelectOption<AppointmentStatus>[], status: AppointmentStatus) => {
+  return appointmentStatuses.find((appointmentStatus) => appointmentStatus.value === status)?.label
+};
+
+export const eventTitle = (appointmentTypes: SelectOption<AppointmentType>[], event: CalendarEvent) => {
+  return event.reason || formatType(appointmentTypes, event.type)
 };
 
 export const hourLabel = (hour: number) => {

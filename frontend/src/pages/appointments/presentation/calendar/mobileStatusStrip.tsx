@@ -1,25 +1,26 @@
+import { cn, type SelectOption } from '@/lib/utils';
 import type { AppointmentStatus } from '@/types/appointments_type';
-import { STATUS_ORDER } from './calendar_constants';
-import { formatStatus, statusStyle } from './calendar_functions';
-import { cn } from '@/lib/utils';
+import { statusStyle } from './calendar_functions';
 
 const MobileStatusStrip = ({
+  appointmentStatus,
   statusCounts,
   toggleStatus,
   visibleStatuses,
 }: {
+  appointmentStatus: SelectOption<AppointmentStatus>[];
   statusCounts: Record<AppointmentStatus, number>;
   toggleStatus: (status: AppointmentStatus) => void;
   visibleStatuses: Set<AppointmentStatus>;
 }) => {
   return (
     <div className="flex min-w-0 gap-2 overflow-x-auto border-b px-2 py-2 sm:px-3 2xl:hidden">
-      {STATUS_ORDER.map((status) => {
-        const active = visibleStatuses.has(status);
+      {appointmentStatus.map((statusOption) => {
+        const active = visibleStatuses.has(statusOption.value);
 
         return (
           <button
-            key={status}
+            key={statusOption.value}
             type="button"
             className={cn(
               'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full border px-2 text-[11px] font-medium',
@@ -27,11 +28,11 @@ const MobileStatusStrip = ({
                 ? 'border-border bg-background text-foreground'
                 : 'border-transparent bg-muted/60 text-muted-foreground',
             )}
-            onClick={() => toggleStatus(status)}
+            onClick={() => toggleStatus(statusOption.value)}
           >
-            <span className={cn('size-2 rounded-full', statusStyle(status).dot)} />
-            {formatStatus(status)}
-            <span className="text-muted-foreground">{statusCounts[status]}</span>
+            <span className={cn('size-2 rounded-full', statusStyle(statusOption.value).dot)} />
+            {statusOption.label}
+            <span className="text-muted-foreground">{statusCounts[statusOption.value]}</span>
           </button>
         );
       })}

@@ -14,13 +14,10 @@ import {
   useEffect,
   useMemo,
   useRef,
-  useState,
-  type ChangeEvent,
-  type SyntheticEvent,
+  useState
 } from 'react';
 
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -31,92 +28,44 @@ import {
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { cn } from '@/lib/utils';
+import type { AppointmentOptions } from '@/lib/api/appointments';
+import { cn, toDateTimeLocal } from '@/lib/utils';
+import CreateFormApplication from '@/pages/appointments/application/createForm.application';
+import { INITIAL_STATE, useFormState } from '@/pages/appointments/presentation/createForm/createForm_data';
+import StatusFilters from '@/pages/appointments/presentation/statusFilters';
 import type { Appointment, AppointmentStatus } from '@/types/appointments_type';
-import type { CalendarDateSelection, CalendarEvent, CalendarView } from './calendar/calendar_types';
+import AppointmentDetails from './calendar/appointmentDetails';
 import {
-  CANCELLED_BY_LABEL,
-  CANCELLED_BY_ORDER,
-  STATUS_LABEL,
-  STATUS_ORDER,
-  TYPE_LABEL,
-  TYPE_ORDER,
   WEEK_STARTS_ON,
 } from './calendar/calendar_constants';
 import {
   dateKey,
-  formatStatus,
   groupEventsByDay,
-  statusStyle,
   toCalendarEvent,
   visibleRangeLabel,
 } from './calendar/calendar_functions';
+import type { CalendarDateSelection, CalendarEvent, CalendarView } from './calendar/calendar_types';
 import MobileStatusStrip from './calendar/mobileStatusStrip';
 import MonthView from './calendar/monthView';
-import TimeGridView from './calendar/timeGridView';
 import ScheduleView from './calendar/scheduleView';
-import AppointmentDetails from './calendar/appointmentDetails';
 import SelectionMenu from './calendar/selectionMenu';
-import AppointmentFormPresentation from './appointmentForm.presentation';
-import type { FormState } from './appointmentForm/appointmentForm_types';
-import { INITIAL_STATE as APPOINTMENT_FORM_INITIAL_STATE } from './appointmentForm/appointmentForm_initialState';
-
-const APPOINTMENT_FORM_OPTIONS = {
-  type: TYPE_ORDER.map((value) => ({ value, label: TYPE_LABEL[value] })),
-  status: STATUS_ORDER.map((value) => ({ value, label: STATUS_LABEL[value] })),
-  cancelledBy: CANCELLED_BY_ORDER.map((value) => ({ value, label: CANCELLED_BY_LABEL[value] })),
-};
-
-const toDateTimeLocal = (date: Date) => format(date, "yyyy-MM-dd'T'HH:mm");
-
-const parseDateOnly = (value: string) => {
-  const [year, month, day] = value.split('-').map(Number);
-  return new Date(year, month - 1, day);
-};
-
-function StatusFilters({
-  statusCounts,
-  toggleStatus,
-  visibleStatuses,
-}: {
-  statusCounts: Record<AppointmentStatus, number>;
-  toggleStatus: (status: AppointmentStatus) => void;
-  visibleStatuses: Set<AppointmentStatus>;
-}) {
-  return (
-    <div className="space-y-1">
-      {STATUS_ORDER.map((status) => (
-        <label
-          key={status}
-          className="flex cursor-pointer items-center gap-2 rounded px-1.5 py-1 text-xs hover:bg-muted/70"
-        >
-          <input
-            type="checkbox"
-            checked={visibleStatuses.has(status)}
-            className="size-3.5 rounded border-border accent-[#1a73e8]"
-            onChange={() => toggleStatus(status)}
-          />
-          <span className={cn('size-2.5 rounded-full', statusStyle(status).dot)} />
-          <span className="min-w-0 flex-1 truncate">{formatStatus(status)}</span>
-          <span className="text-muted-foreground">{statusCounts[status]}</span>
-        </label>
-      ))}
-    </div>
-  );
-}
+import TimeGridView from './calendar/timeGridView';
 
 const CalendarPresentation = ({
+  options,
   appointments,
   error,
   loading,
   onRefresh,
 }: {
+  options: AppointmentOptions
   appointments: Appointment[];
   error?: string | null;
   loading?: boolean;
   onRefresh?: () => void;
 }) => {
   const today = startOfDay(new Date());
+  const formState = useFormState()
   const [currentDate, setCurrentDate] = useState(today);
   const [selectedDate, setSelectedDate] = useState(today);
   const [selectedDateRange, setSelectedDateRange] = useState<CalendarDateSelection>(() => ({
@@ -131,16 +80,12 @@ const CalendarPresentation = ({
   const dateSelectionAnchorRef = useRef<Date | null>(null);
   const dateSelectionEndRef = useRef<Date | null>(null);
   const [visibleStatuses, setVisibleStatuses] = useState<Set<AppointmentStatus>>(
-    () => new Set(STATUS_ORDER),
+    new Set(options.appointmentStatus.map(({ value }) => value))
   );
   const [selectionMenuPosition, setSelectionMenuPosition] = useState<{
     x: number;
     y: number;
   } | null>(null);
-  const [isCreatingAppointment, setIsCreatingAppointment] = useState(false);
-  const [appointmentForm, setAppointmentForm] = useState<FormState>(
-    APPOINTMENT_FORM_INITIAL_STATE,
-  );
 
   const calendarEvents = useMemo(
     () =>
@@ -155,30 +100,34 @@ const CalendarPresentation = ({
     const query = searchQuery.trim().toLowerCase();
 
     return calendarEvents.filter((event) => {
-      const statusIsKnown = STATUS_ORDER.includes(event.status);
+      const statusIsKnown = options.appointmentStatus.some(statusOption => statusOption.value === event.status);
       const statusVisible = !statusIsKnown || visibleStatuses.has(event.status);
       const matchesSearch = !query || event.searchText.includes(query);
 
       return statusVisible && matchesSearch;
     });
-  }, [calendarEvents, searchQuery, visibleStatuses]);
+  }, [options, calendarEvents, searchQuery, visibleStatuses]);
 
   const eventsByDay = useMemo(() => groupEventsByDay(filteredEvents), [filteredEvents]);
 
   const statusCounts = useMemo(() => {
-    const counts = Object.fromEntries(STATUS_ORDER.map((status) => [status, 0])) as Record<
+    const counts = Object.fromEntries(options.appointmentStatus.map((status) => [status, 0])) as Record<
       AppointmentStatus,
       number
     >;
 
     for (const event of calendarEvents) {
-      if (STATUS_ORDER.includes(event.status)) {
+      if (
+        options.appointmentStatus.some(
+          (statusOption) => statusOption.value === event.status,
+        )
+      ) {
         counts[event.status] += 1;
       }
     }
 
     return counts;
-  }, [calendarEvents]);
+  }, [options, calendarEvents]);
 
   const activeDateRange = dragDateRange ?? selectedDateRange;
   const selectedRangeDays = useMemo(
@@ -197,11 +146,11 @@ const CalendarPresentation = ({
   const selectedRangeLabel = selectionIsSingleDay
     ? format(activeDateRange.start, 'EEEE, MMM d')
     : `${format(activeDateRange.start, 'MMM d')} - ${format(
-        activeDateRange.end,
-        activeDateRange.start.getFullYear() === activeDateRange.end.getFullYear()
-          ? 'MMM d'
-          : 'MMM d, yyyy',
-      )}`;
+      activeDateRange.end,
+      activeDateRange.start.getFullYear() === activeDateRange.end.getFullYear()
+        ? 'MMM d'
+        : 'MMM d, yyyy',
+    )}`;
 
   const normalizeDateSelection = useCallback((start: Date, end: Date) => {
     const normalizedStart = startOfDay(start);
@@ -385,31 +334,14 @@ const CalendarPresentation = ({
     const end = new Date(activeDateRange.end);
     end.setHours(9, 30, 0, 0);
 
-    setAppointmentForm({
-      ...APPOINTMENT_FORM_INITIAL_STATE,
+    formState.set({
+      ...INITIAL_STATE,
       duration_minutes: '30',
       end_datetime: toDateTimeLocal(end),
       start_datetime: toDateTimeLocal(start),
     });
     setSelectionMenuPosition(null);
-    setIsCreatingAppointment(true);
-  };
-
-  const handleAppointmentDateRangeChange = (startDate: string, endDate: string) => {
-    if (!startDate || !endDate) return;
-    selectDateRange(parseDateOnly(startDate), parseDateOnly(endDate), { updateCurrentDate: true });
-  };
-
-  const setAppointmentField =
-    (key: keyof FormState) => (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-      setAppointmentForm((previous) => ({ ...previous, [key]: e.target.value }));
-
-  const setAppointmentSelectField = (key: keyof FormState) => (value: string) =>
-    setAppointmentForm((previous) => ({ ...previous, [key]: value }));
-
-  const handleAppointmentFormSubmit = (event: SyntheticEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setIsCreatingAppointment(false);
+    formState.set({ isCreatingAppointment: true });
   };
 
   return (
@@ -433,6 +365,7 @@ const CalendarPresentation = ({
         <div>
           <p className="mb-2 text-xs font-semibold text-foreground">Appointment status</p>
           <StatusFilters
+            appointmentStatus={options.appointmentStatus}
             statusCounts={statusCounts}
             toggleStatus={toggleStatus}
             visibleStatuses={visibleStatuses}
@@ -469,7 +402,7 @@ const CalendarPresentation = ({
             </div>
           </div>
           <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-1.5 sm:gap-2 lg:ml-auto lg:flex">
-            <label className="relative min-w-0 flex-1 lg:w-64 lg:flex-none">
+            <div className="relative min-w-0 flex-1 lg:w-64 lg:flex-none">
               <span className="sr-only">Search appointments</span>
               <Search className="absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -478,7 +411,7 @@ const CalendarPresentation = ({
                 placeholder="Search appointments"
                 onChange={(event) => setSearchQuery(event.target.value)}
               />
-            </label>
+            </div>
             <Tooltip delayDuration={500}>
               <TooltipTrigger asChild>
                 <Button type="button" variant="ghost" size="icon" onClick={onRefresh}>
@@ -503,6 +436,7 @@ const CalendarPresentation = ({
         </div>
 
         <MobileStatusStrip
+          appointmentStatus={options.appointmentStatus}
           statusCounts={statusCounts}
           toggleStatus={toggleStatus}
           visibleStatuses={visibleStatuses}
@@ -559,6 +493,7 @@ const CalendarPresentation = ({
           )}
           {view === 'schedule' && (
             <ScheduleView
+              options={options}
               currentDate={currentDate}
               eventsByDay={eventsByDay}
               onDateSelect={selectDateAndNavigate}
@@ -581,29 +516,25 @@ const CalendarPresentation = ({
       )}
 
       {selectedEvent && (
-        <AppointmentDetails event={selectedEvent} onClose={() => setSelectedEvent(null)} />
+        <AppointmentDetails
+          options={options}
+          event={selectedEvent}
+          onClose={() => setSelectedEvent(null)}
+        />
       )}
 
       {selectionMenuPosition && (
         <SelectionMenu
+          options={options}
           position={selectionMenuPosition}
           onClose={() => setSelectionMenuPosition(null)}
           onCreateAppointment={handleCreateAppointment}
         />
       )}
-
-      <Dialog open={isCreatingAppointment} onOpenChange={setIsCreatingAppointment}>
-        <DialogContent className="flex max-h-[85vh] w-full flex-col overflow-hidden sm:max-w-xl">
-          <AppointmentFormPresentation
-            form={appointmentForm}
-            set={setAppointmentField}
-            setSelect={setAppointmentSelectField}
-            onSubmit={handleAppointmentFormSubmit}
-            onDateRangeChange={handleAppointmentDateRangeChange}
-            options={APPOINTMENT_FORM_OPTIONS}
-          />
-        </DialogContent>
-      </Dialog>
+      <CreateFormApplication
+        options={options}
+        selectDateRange={selectDateRange}
+      />
     </section>
   );
 };

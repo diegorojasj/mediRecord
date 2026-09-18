@@ -1,11 +1,10 @@
 import { useState } from 'react';
-import type { FormState } from '../presentation/creationForm/creationForm_types';
-import { INITIAL_STATE } from '../presentation/creationForm/creationForm_initialState';
-import CreationFormPresentation from '../presentation/creationForm.presentation';
-import { createPatient, updatePatient, type PatientOptions } from '@/lib/api/patients';
-
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { createPatient, type PatientOptions, updatePatient } from '@/lib/api/patients';
+import { INITIAL_STATE } from '../presentation/creationForm/creationForm_initialState';
+import type { FormState } from '../presentation/creationForm/creationForm_types';
+import CreationFormPresentation from '../presentation/creationForm.presentation';
 
 const CreationFormApplication = (
   {

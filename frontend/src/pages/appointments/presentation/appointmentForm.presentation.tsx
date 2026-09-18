@@ -1,25 +1,17 @@
+import type { ChangeEvent, SyntheticEvent } from 'react';
+import { SelectField } from '@/components/selectField';
 import { Button } from '@/components/ui/button';
 import {
-  DialogClose,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
-  DialogTitle,
+  DialogTitle
 } from '@/components/ui/dialog';
-import { Field, FieldGroup, FieldSet, FieldLegend, FieldSeparator } from '@/components/ui/field';
+import { Field, FieldGroup, FieldLegend, FieldSeparator, FieldSet } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { SelectField } from '@/components/selectField';
-import { type ChangeEvent, type SyntheticEvent } from 'react';
-import type { FormState } from './appointmentForm/appointmentForm_types';
-
-type SelectOption = { value: string; label: string };
-type FormOptions = {
-  type: SelectOption[];
-  status: SelectOption[];
-  cancelledBy: SelectOption[];
-};
+import type { AppointmentOptions } from '@/lib/api/appointments';
+import type { FormState } from './createForm/createForm_types';
 
 const splitDateTime = (value: string) => {
   const [date = '', time = ''] = value.split('T');
@@ -52,7 +44,7 @@ const AppointmentFormPresentation = ({
   options,
 }: {
   form: FormState;
-  options: FormOptions;
+  options: AppointmentOptions;
   set: (key: keyof FormState) => (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   setSelect: (key: keyof FormState) => (value: string) => void;
   onSubmit: (e: SyntheticEvent<HTMLFormElement>) => void;
@@ -68,37 +60,37 @@ const AppointmentFormPresentation = ({
 
   const setDateTimePart =
     (key: 'start_datetime' | 'end_datetime', part: 'date' | 'time') =>
-    (e: ChangeEvent<HTMLInputElement>) => {
-      const parts = key === 'start_datetime' ? startParts : endParts;
+      (e: ChangeEvent<HTMLInputElement>) => {
+        const parts = key === 'start_datetime' ? startParts : endParts;
 
-      const next =
-        part === 'date'
-          ? combineDateTime(e.target.value, parts.time)
-          : combineDateTime(parts.date, e.target.value);
+        const next =
+          part === 'date'
+            ? combineDateTime(e.target.value, parts.time)
+            : combineDateTime(parts.date, e.target.value);
 
-      set(key)({ target: { value: next } } as ChangeEvent<HTMLInputElement>);
+        set(key)({ target: { value: next } } as ChangeEvent<HTMLInputElement>);
 
-      const startPushesEnd =
-        key === 'start_datetime' && part === 'date' && e.target.value > endParts.date;
-      if (startPushesEnd) {
-        set('end_datetime')({
-          target: { value: combineDateTime(e.target.value, endParts.time) },
-        } as ChangeEvent<HTMLInputElement>);
-      }
+        const startPushesEnd =
+          key === 'start_datetime' && part === 'date' && e.target.value > endParts.date;
+        if (startPushesEnd) {
+          set('end_datetime')({
+            target: { value: combineDateTime(e.target.value, endParts.time) },
+          } as ChangeEvent<HTMLInputElement>);
+        }
 
-      if (part === 'date' && onDateRangeChange) {
-        const nextStartDate = key === 'start_datetime' ? e.target.value : startParts.date;
-        const nextEndDate = startPushesEnd
-          ? e.target.value
-          : key === 'end_datetime'
+        if (part === 'date' && onDateRangeChange) {
+          const nextStartDate = key === 'start_datetime' ? e.target.value : startParts.date;
+          const nextEndDate = startPushesEnd
             ? e.target.value
-            : endParts.date;
-        onDateRangeChange(nextStartDate, nextEndDate);
-      }
-    };
+            : key === 'end_datetime'
+              ? e.target.value
+              : endParts.date;
+          onDateRangeChange(nextStartDate, nextEndDate);
+        }
+      };
 
   return (
-    <form onSubmit={onSubmit} className="flex h-full flex-col">
+    <form onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col">
       <DialogHeader>
         <DialogTitle className="!text-gray-900 dark:!text-gray-50">
           Register Appointment
@@ -106,7 +98,7 @@ const AppointmentFormPresentation = ({
         <DialogDescription>Fill in the appointment details below.</DialogDescription>
       </DialogHeader>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="flex flex-col gap-6 px-6 py-6">
           {/* Patient & Provider */}
           <FieldSet>
@@ -209,14 +201,14 @@ const AppointmentFormPresentation = ({
                 <SelectField
                   id="type"
                   label="Type *"
-                  options={options.type}
+                  options={options.appointmentType}
                   value={form.type}
                   onChange={setSelect('type')}
                 />
                 <SelectField
                   id="status"
                   label="Status"
-                  options={options.status}
+                  options={options.appointmentStatus}
                   value={form.status}
                   onChange={setSelect('status')}
                 />
@@ -261,16 +253,10 @@ const AppointmentFormPresentation = ({
             </>
           )}
         </div>
+        <div className='float-right flex gap-2 px-6 pb-2' >
+          <Button type="submit">Register</Button>
+        </div>
       </div>
-
-      <DialogFooter>
-        <DialogClose asChild>
-          <Button variant="outline" type="button">
-            Cancel
-          </Button>
-        </DialogClose>
-        <Button type="submit">Register</Button>
-      </DialogFooter>
     </form>
   );
 };

@@ -1,13 +1,16 @@
 import { format } from 'date-fns';
+import { cn, type SelectOption } from '@/lib/utils';
+import type { AppointmentType } from '@/types/appointments_type';
 import { eventTitle, statusStyle } from './calendar_functions';
 import type { CalendarEvent } from './calendar_types';
-import { cn } from '@/lib/utils';
 
 const AppointmentPill = ({
+  appointmentTypes,
   event,
   onSelect,
   compact = false,
 }: {
+  appointmentTypes: SelectOption<AppointmentType>[];
   compact?: boolean;
   event: CalendarEvent;
   onSelect: (event: CalendarEvent) => void;
@@ -17,7 +20,7 @@ const AppointmentPill = ({
   return (
     <button
       type="button"
-      title={`${format(event.start, 'h:mm a')} ${eventTitle(event)}`}
+      title={`${format(event.start, 'h:mm a')} ${eventTitle(appointmentTypes, event)}`}
       className={cn(
         'flex w-full min-w-0 items-center gap-1 overflow-hidden rounded border px-1.5 text-left font-medium leading-5 transition hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30',
         compact ? 'h-5 text-[11px] max-sm:px-1' : 'h-full min-h-7 text-xs',
@@ -27,7 +30,7 @@ const AppointmentPill = ({
       onClick={() => onSelect(event)}
     >
       <span className="shrink-0 tabular-nums max-sm:hidden">{format(event.start, 'h:mm a')}</span>
-      <span className="truncate max-sm:hidden">{eventTitle(event)}</span>
+      <span className="truncate max-sm:hidden">{eventTitle(appointmentTypes, event)}</span>
       <span
         className={cn('hidden size-2 rounded-full max-sm:block', statusStyle(event.status).dot)}
       />

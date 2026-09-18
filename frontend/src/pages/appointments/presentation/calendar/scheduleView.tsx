@@ -1,15 +1,18 @@
-import { useMemo } from 'react';
-import type { CalendarEvent, EventMap } from './calendar_types';
 import { addDays, eachDayOfInterval, format, isToday, startOfDay } from 'date-fns';
-import { dateKey, eventTitle, formatStatus, shortId, statusStyle } from './calendar_functions';
+import { useMemo } from 'react';
+import type { AppointmentOptions } from '@/lib/api/appointments';
 import { cn } from '@/lib/utils';
+import { dateKey, eventTitle, formatStatus, shortId, statusStyle } from './calendar_functions';
+import type { CalendarEvent, EventMap } from './calendar_types';
 
 const ScheduleView = ({
+  options,
   currentDate,
   eventsByDay,
   onDateSelect,
   onEventSelect,
 }: {
+  options: AppointmentOptions;
   currentDate: Date;
   eventsByDay: EventMap;
   onDateSelect: (date: Date) => void;
@@ -64,7 +67,7 @@ const ScheduleView = ({
                     />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-semibold text-foreground">
-                        {eventTitle(event)}
+                        {eventTitle(options.appointmentType, event)}
                       </span>
                       <span className="block text-xs text-muted-foreground">
                         {format(event.start, 'h:mm a')} - {format(event.end, 'h:mm a')} · Patient{' '}
@@ -77,7 +80,7 @@ const ScheduleView = ({
                         statusStyle(event.status).badge,
                       )}
                     >
-                      {formatStatus(event.status)}
+                      {formatStatus(options.appointmentStatus, event.status)}
                     </span>
                   </button>
                 ))}

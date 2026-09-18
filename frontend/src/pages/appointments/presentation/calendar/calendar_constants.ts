@@ -1,4 +1,4 @@
-import type { AppointmentStatus, AppointmentType, CancelledBy } from '@/types/appointments_type';
+import type { AppointmentStatus } from '@/types/appointments_type';
 
 export const WEEK_STARTS_ON = 0;
 export const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -9,46 +9,6 @@ export const HOURS = Array.from(
   { length: WORKDAY_END_HOUR - WORKDAY_START_HOUR + 1 },
   (_, index) => WORKDAY_START_HOUR + index,
 );
-
-export const STATUS_ORDER: AppointmentStatus[] = [
-  'scheduled',
-  'confirmed',
-  'in_progress',
-  'completed',
-  'cancelled',
-  'no_show',
-];
-
-export const STATUS_LABEL: Record<AppointmentStatus, string> = {
-  scheduled: 'Scheduled',
-  confirmed: 'Confirmed',
-  in_progress: 'In progress',
-  completed: 'Completed',
-  cancelled: 'Cancelled',
-  no_show: 'No show',
-};
-
-export const TYPE_ORDER: AppointmentType[] = [
-  'first_visit',
-  'follow_up',
-  'procedure',
-  'teleconsult',
-];
-
-export const TYPE_LABEL: Record<AppointmentType, string> = {
-  first_visit: 'First visit',
-  follow_up: 'Follow-up',
-  procedure: 'Procedure',
-  teleconsult: 'Teleconsult',
-};
-
-export const CANCELLED_BY_ORDER: CancelledBy[] = ['patient', 'doctor', 'system'];
-
-export const CANCELLED_BY_LABEL: Record<CancelledBy, string> = {
-  patient: 'Patient',
-  doctor: 'Doctor',
-  system: 'System',
-};
 
 export const FALLBACK_STATUS = {
   badge: 'border-slate-200 bg-slate-50 text-slate-700',

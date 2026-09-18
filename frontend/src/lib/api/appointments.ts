@@ -1,29 +1,22 @@
-import type { Appointment } from '@/types/appointments_type';
+import { fetchConst } from '@/lib/utils';
+import type { Appointment, AppointmentStatus, AppointmentType, CancelledBy } from '@/types/appointments_type';
 
 const BASE = '/api/appointments';
 
-export type SelectOption = { value: string; label: string };
+export const getConstAppointmentType = () => fetchConst<AppointmentType>(BASE, '/appointment-type');
+export const getConstAppointmentStatus = () => fetchConst<AppointmentStatus>(BASE, '/appointment-status');
+export const getConstCancelledBy = () => fetchConst<CancelledBy>(BASE, '/cancelled-by');
 
-function labelize(value: string) {
-  return value
-    .split('_')
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ');
+export async function getAllAppointmentOptions() {
+  const [appointmentType, appointmentStatus, cancelledBy] = await Promise.all([
+    getConstAppointmentType(),
+    getConstAppointmentStatus(),
+    getConstCancelledBy(),
+  ]);
+  return { appointmentType, appointmentStatus, cancelledBy }
 }
 
-function toOptions(values: string[]): SelectOption[] {
-  return values.map((value) => ({ value, label: labelize(value) }));
-}
-
-async function fetchConst(path: string): Promise<SelectOption[]> {
-  const res = await fetch(`${BASE}${path}`);
-  if (!res.ok) throw new Error(`${res.status}`);
-  return toOptions(await res.json());
-}
-
-export const getConstAppointmentType = () => fetchConst('/appointment-type');
-export const getConstAppointmentStatus = () => fetchConst('/appointment-status');
-export const getConstCancelledBy = () => fetchConst('/cancelled-by');
+export type AppointmentOptions = Awaited<ReturnType<typeof getAllAppointmentOptions>>;
 
 export async function getAppointments(): Promise<Appointment[]> {
   const res = await fetch(`${BASE}/`);

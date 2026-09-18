@@ -1,11 +1,12 @@
-import { cn } from '@/lib/utils';
-import type { CalendarEvent } from './calendar_types';
-import { eventTitle, formatStatus, formatType, shortId, statusStyle } from './calendar_functions';
-import { Button } from '@/components/ui/button';
-import { Clock3, Stethoscope, UserRound, X } from 'lucide-react';
 import { differenceInMinutes, format } from 'date-fns';
+import { Clock3, Stethoscope, UserRound, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import type { AppointmentOptions } from '@/lib/api/appointments';
+import { cn } from '@/lib/utils';
+import { eventTitle, formatStatus, formatType, shortId, statusStyle } from './calendar_functions';
+import type { CalendarEvent } from './calendar_types';
 
-const AppointmentDetails = ({ event, onClose }: { event: CalendarEvent; onClose: () => void }) => {
+const AppointmentDetails = ({ options, event, onClose }: { options: AppointmentOptions, event: CalendarEvent; onClose: () => void }) => {
   return (
     <div className="absolute inset-x-3 top-24 z-30 max-h-[calc(100%-7rem)] overflow-auto rounded-md border bg-popover p-4 text-popover-foreground shadow-xl sm:left-auto sm:right-4 sm:top-20 sm:w-[22rem]">
       <div className="mb-3 flex items-start justify-between gap-3">
@@ -13,11 +14,11 @@ const AppointmentDetails = ({ event, onClose }: { event: CalendarEvent; onClose:
           <div className="flex items-center gap-2">
             <span className={cn('size-3 rounded-full', statusStyle(event.status).dot)} />
             <h2 className="m-0 truncate text-base font-semibold text-foreground">
-              {eventTitle(event)}
+              {eventTitle(options.appointmentType, event)}
             </h2>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
-            {formatType(event.type)} · {formatStatus(event.status)}
+            {formatType(options.appointmentType, event.type)} · {formatStatus(options.appointmentStatus, event.status)}
           </p>
         </div>
         <Button type="button" variant="ghost" size="icon-sm" onClick={onClose}>
