@@ -1,6 +1,6 @@
 from beanie import Document
 import os
-from typing import Type
+from typing import Any, Type
 
 from beanie import init_beanie
 from pydantic import BaseModel
@@ -21,23 +21,19 @@ def connection_string() -> str:
 
     return f"mongodb://{user}:{password}@{host}:{port}/{database}?{ '&'.join(params) }"
 
-def mongo_client():
-    pool_config = {
-        "maxPoolSize": 500,
-        "minPoolSize": 10,
-        "retryWrites": True,
-        "retryReads": True,
-        "serverSelectionTimeoutMS": 10000,
-        "connectTimeoutMS": 5000,
-        "socketTimeoutMS": 20000,
-        "waitQueueTimeoutMS": 10000,
-        "appName": "auth-service",
-        "maxIdleTimeMS": 30000
-    }
-    
+def mongo_client() -> AsyncMongoClient[dict[str, Any]]:
     return AsyncMongoClient(
         connection_string(),
-        **pool_config
+        maxPoolSize=500,
+        minPoolSize=10,
+        retryWrites=True,
+        retryReads=True,
+        serverSelectionTimeoutMS=10000,
+        connectTimeoutMS=5000,
+        socketTimeoutMS=20000,
+        waitQueueTimeoutMS=10000,
+        appName="auth-service",
+        maxIdleTimeMS=30000,
     )
 
 async def __connection(app: FastAPI) -> None:
