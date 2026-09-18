@@ -124,6 +124,13 @@ ignore = [
     # Type annotations - these are too strict
     "ANN401", # Dynamically typed expressions (Any) - sometimes needed
 
+    # Import style - controllers/models within a service intentionally use
+    # relative imports (`..models.x`) rather than `src.x`; absolute imports
+    # only work because each service's own directory happens to be on
+    # sys.path at runtime (see containers/containerfiles), which isn't a
+    # guarantee we want import style to depend on.
+    "TID252", # Relative imports from parent modules
+
     # Formatter conflicts - must ignore
     "COM812", # Trailing comma (conflicts with formatter)
     "ISC001", # Implicit string concatenation (conflicts with formatter)
