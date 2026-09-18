@@ -6,9 +6,10 @@ import {
   format,
   isSameDay,
   startOfDay,
+  startOfMonth,
   startOfWeek,
 } from 'date-fns';
-import { ChevronLeft, ChevronRight, RefreshCw, Search } from 'lucide-react';
+import { ChevronLeft, ChevronRight, History, RefreshCw, Search } from 'lucide-react';
 import {
   useCallback,
   useEffect,
@@ -45,6 +46,7 @@ import {
   visibleRangeLabel,
 } from './calendar/calendar_functions';
 import type { CalendarDateSelection, CalendarEvent, CalendarView } from './calendar/calendar_types';
+import HistoryPanel from './calendar/historyPanel';
 import MobileStatusStrip from './calendar/mobileStatusStrip';
 import MonthView from './calendar/monthView';
 import ScheduleView from './calendar/scheduleView';
@@ -75,6 +77,7 @@ const CalendarPresentation = ({
   const [dragDateRange, setDragDateRange] = useState<CalendarDateSelection | null>(null);
   const [isSelectingDates, setIsSelectingDates] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [view, setView] = useState<CalendarView>('month');
   const dateSelectionAnchorRef = useRef<Date | null>(null);
@@ -111,10 +114,9 @@ const CalendarPresentation = ({
   const eventsByDay = useMemo(() => groupEventsByDay(filteredEvents), [filteredEvents]);
 
   const statusCounts = useMemo(() => {
-    const counts = Object.fromEntries(options.appointmentStatus.map((status) => [status, 0])) as Record<
-      AppointmentStatus,
-      number
-    >;
+    const counts = Object.fromEntries(
+      options.appointmentStatus.map((status) => [status.value, 0]),
+    ) as Record<AppointmentStatus, number>;
 
     for (const event of calendarEvents) {
       if (
@@ -163,7 +165,29 @@ const CalendarPresentation = ({
     return { end: normalizedStart, start: normalizedEnd };
   }, []);
 
+  const isAtEarliestPeriod = useCallback(
+    (date: Date) => {
+      if (view === 'month') {
+        return startOfMonth(date).getTime() <= startOfMonth(today).getTime();
+      }
+
+      if (view === 'week') {
+        return (
+          startOfWeek(date, { weekStartsOn: WEEK_STARTS_ON }).getTime() <=
+          startOfWeek(today, { weekStartsOn: WEEK_STARTS_ON }).getTime()
+        );
+      }
+
+      return date.getTime() <= today.getTime();
+    },
+    [today, view],
+  );
+
+  const canGoToPreviousPeriod = !isAtEarliestPeriod(currentDate);
+
   const navigate = (direction: -1 | 1) => {
+    if (direction === -1 && !canGoToPreviousPeriod) return;
+
     if (view === 'month') {
       setCurrentDate((date) => addMonths(date, direction));
       return;
@@ -190,6 +214,8 @@ const CalendarPresentation = ({
   const selectDateRange = useCallback(
     (start: Date, end: Date, options: { updateCurrentDate?: boolean } = {}) => {
       const nextRange = normalizeDateSelection(start, end);
+      if (nextRange.start.getTime() < today.getTime()) return;
+
       dateSelectionAnchorRef.current = null;
       dateSelectionEndRef.current = null;
       setSelectedDate(nextRange.start);
@@ -199,7 +225,7 @@ const CalendarPresentation = ({
         setCurrentDate(nextRange.start);
       }
     },
-    [normalizeDateSelection],
+    [normalizeDateSelection, today],
   );
 
   const selectDate = (date: Date) => {
@@ -247,13 +273,15 @@ const CalendarPresentation = ({
 
   const scrollMonth = useCallback(
     (direction: -1 | 1, selectionDate?: Date) => {
+      if (direction === -1 && isAtEarliestPeriod(currentDate)) return;
+
       setCurrentDate((date) => addMonths(date, direction));
 
       if (selectionDate && dateSelectionAnchorRef.current) {
         moveDateSelection(selectionDate);
       }
     },
-    [moveDateSelection],
+    [currentDate, isAtEarliestPeriod, moveDateSelection],
   );
 
   const commitDateSelection = useCallback(
@@ -312,6 +340,11 @@ const CalendarPresentation = ({
   const handleEventSelect = (event: CalendarEvent) => {
     setSelectionMenuPosition(null);
     setSelectedEvent(event);
+  };
+
+  const handleHistoryEventSelect = (event: CalendarEvent) => {
+    setIsHistoryOpen(false);
+    handleEventSelect(event);
   };
 
   const toggleStatus = (status: AppointmentStatus) => {
@@ -381,7 +414,13 @@ const CalendarPresentation = ({
             </Button>
             <Tooltip delayDuration={500}>
               <TooltipTrigger asChild>
-                <Button type="button" variant="ghost" size="icon" onClick={() => navigate(-1)}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  disabled={!canGoToPreviousPeriod}
+                  onClick={() => navigate(-1)}
+                >
                   <ChevronLeft className="size-4" />
                   <span className="sr-only">Previous period</span>
                 </Button>
@@ -401,7 +440,7 @@ const CalendarPresentation = ({
               {visibleRangeLabel(view, currentDate)}
             </div>
           </div>
-          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-1.5 sm:gap-2 lg:ml-auto lg:flex">
+          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_auto_auto] items-center gap-1.5 sm:gap-2 lg:ml-auto lg:flex">
             <div className="relative min-w-0 flex-1 lg:w-64 lg:flex-none">
               <span className="sr-only">Search appointments</span>
               <Search className="absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -412,6 +451,20 @@ const CalendarPresentation = ({
                 onChange={(event) => setSearchQuery(event.target.value)}
               />
             </div>
+            <Tooltip delayDuration={500}>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsHistoryOpen(true)}
+                >
+                  <History className="size-4" />
+                  <span className="sr-only">View appointment history</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>History</TooltipContent>
+            </Tooltip>
             <Tooltip delayDuration={500}>
               <TooltipTrigger asChild>
                 <Button type="button" variant="ghost" size="icon" onClick={onRefresh}>
@@ -534,6 +587,14 @@ const CalendarPresentation = ({
       <CreateFormApplication
         options={options}
         selectDateRange={selectDateRange}
+      />
+
+      <HistoryPanel
+        open={isHistoryOpen}
+        onOpenChange={setIsHistoryOpen}
+        options={options}
+        events={calendarEvents}
+        onEventSelect={handleHistoryEventSelect}
       />
     </section>
   );

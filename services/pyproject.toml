@@ -19,7 +19,7 @@
 # ============================================================================
 
 [project]
-name = "agrilynx-backend"
+name = "backend"
 version = "1.0.0"
 description = "AgriLynx Pro - Agricultural Inventory Management Backend"
 readme = "README.md"

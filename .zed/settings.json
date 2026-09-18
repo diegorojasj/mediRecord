@@ -1,0 +1,28 @@
+{
+  "lsp": {
+    "pyright": {
+      "settings": {
+        "python": {
+          "pythonPath": "./services/.venv/bin/python"
+        },
+        "python.analysis": {
+          "extraPaths": [
+            "./services"
+          ]
+        }
+      }
+    },
+    "basedpyright": {
+      "settings": {
+        "python": {
+          "pythonPath": "./services/.venv/bin/python"
+        },
+        "python.analysis": {
+          "extraPaths": [
+            "./services"
+          ]
+        }
+      }
+    }
+  }
+}
