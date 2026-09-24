@@ -11,9 +11,11 @@
 import { createFileRoute } from '@tanstack/react-router'
 
 import { Route as rootRouteImport } from './pages/__root'
+import { Route as ConfigSectionRouteRouteImport } from './pages/config/$section.route'
 
 const IndexLazyRouteImport = createFileRoute('/')()
 const PatientsIndexLazyRouteImport = createFileRoute('/patients/')()
+const ConfigIndexLazyRouteImport = createFileRoute('/config/')()
 const BillingIndexLazyRouteImport = createFileRoute('/billing/')()
 const AppointmentsIndexLazyRouteImport = createFileRoute('/appointments/')()
 
@@ -27,6 +29,11 @@ const PatientsIndexLazyRoute = PatientsIndexLazyRouteImport.update({
   path: '/patients/',
   getParentRoute: () => rootRouteImport,
 } as any).lazy(() => import('./pages/patients/index.lazy').then((d) => d.Route))
+const ConfigIndexLazyRoute = ConfigIndexLazyRouteImport.update({
+  id: '/config/',
+  path: '/config/',
+  getParentRoute: () => rootRouteImport,
+} as any).lazy(() => import('./pages/config/index.lazy').then((d) => d.Route))
 const BillingIndexLazyRoute = BillingIndexLazyRouteImport.update({
   id: '/billing/',
   path: '/billing/',
@@ -39,38 +46,72 @@ const AppointmentsIndexLazyRoute = AppointmentsIndexLazyRouteImport.update({
 } as any).lazy(() =>
   import('./pages/appointments/index.lazy').then((d) => d.Route),
 )
+const ConfigSectionRouteRoute = ConfigSectionRouteRouteImport.update({
+  id: '/config/$section',
+  path: '/config/$section',
+  getParentRoute: () => rootRouteImport,
+} as any).lazy(() =>
+  import('./pages/config/$section.lazy').then((d) => d.Route),
+)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexLazyRoute
+  '/config/$section': typeof ConfigSectionRouteRoute
   '/appointments/': typeof AppointmentsIndexLazyRoute
   '/billing/': typeof BillingIndexLazyRoute
+  '/config/': typeof ConfigIndexLazyRoute
   '/patients/': typeof PatientsIndexLazyRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexLazyRoute
+  '/config/$section': typeof ConfigSectionRouteRoute
   '/appointments': typeof AppointmentsIndexLazyRoute
   '/billing': typeof BillingIndexLazyRoute
+  '/config': typeof ConfigIndexLazyRoute
   '/patients': typeof PatientsIndexLazyRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexLazyRoute
+  '/config/$section': typeof ConfigSectionRouteRoute
   '/appointments/': typeof AppointmentsIndexLazyRoute
   '/billing/': typeof BillingIndexLazyRoute
+  '/config/': typeof ConfigIndexLazyRoute
   '/patients/': typeof PatientsIndexLazyRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/appointments/' | '/billing/' | '/patients/'
+  fullPaths:
+    | '/'
+    | '/config/$section'
+    | '/appointments/'
+    | '/billing/'
+    | '/config/'
+    | '/patients/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/appointments' | '/billing' | '/patients'
-  id: '__root__' | '/' | '/appointments/' | '/billing/' | '/patients/'
+  to:
+    | '/'
+    | '/config/$section'
+    | '/appointments'
+    | '/billing'
+    | '/config'
+    | '/patients'
+  id:
+    | '__root__'
+    | '/'
+    | '/config/$section'
+    | '/appointments/'
+    | '/billing/'
+    | '/config/'
+    | '/patients/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexLazyRoute: typeof IndexLazyRoute
+  ConfigSectionRouteRoute: typeof ConfigSectionRouteRoute
   AppointmentsIndexLazyRoute: typeof AppointmentsIndexLazyRoute
   BillingIndexLazyRoute: typeof BillingIndexLazyRoute
+  ConfigIndexLazyRoute: typeof ConfigIndexLazyRoute
   PatientsIndexLazyRoute: typeof PatientsIndexLazyRoute
 }
 
@@ -90,6 +131,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PatientsIndexLazyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/config/': {
+      id: '/config/'
+      path: '/config'
+      fullPath: '/config/'
+      preLoaderRoute: typeof ConfigIndexLazyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/billing/': {
       id: '/billing/'
       path: '/billing'
@@ -104,13 +152,22 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppointmentsIndexLazyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/config/$section': {
+      id: '/config/$section'
+      path: '/config/$section'
+      fullPath: '/config/$section'
+      preLoaderRoute: typeof ConfigSectionRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexLazyRoute: IndexLazyRoute,
+  ConfigSectionRouteRoute: ConfigSectionRouteRoute,
   AppointmentsIndexLazyRoute: AppointmentsIndexLazyRoute,
   BillingIndexLazyRoute: BillingIndexLazyRoute,
+  ConfigIndexLazyRoute: ConfigIndexLazyRoute,
   PatientsIndexLazyRoute: PatientsIndexLazyRoute,
 }
 export const routeTree = rootRouteImport

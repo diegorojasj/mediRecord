@@ -1,19 +1,20 @@
-import { Link } from '@tanstack/react-router';
-import { HugeiconsIcon } from '@hugeicons/react';
 import {
   Activity01Icon,
-  DashboardSquare01Icon,
-  UserIcon,
   Calendar01Icon,
+  Configuration01Icon,
+  DashboardSquare01Icon,
   Invoice01Icon,
+  UserIcon
 } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { Link } from '@tanstack/react-router';
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
-  SidebarGroupLabel,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -41,6 +42,11 @@ const navItems = [
     to: '/billing',
     icon: Invoice01Icon,
   },
+  {
+    label: 'Config',
+    to: '/config',
+    icon: Configuration01Icon
+  }
 ];
 
 const AppSideBar = () => {
