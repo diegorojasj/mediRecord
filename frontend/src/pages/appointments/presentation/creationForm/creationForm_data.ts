@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { FormState } from './createForm_types';
+import type { FormState } from './creationForm_types';
 
 export const INITIAL_STATE: FormState = {
   patient_id: '',
@@ -15,7 +15,7 @@ export const INITIAL_STATE: FormState = {
   cancellation_reason: '',
 };
 
-export const useFormState = create<FormState & { isCreatingAppointment: boolean, set: (newFormState: FormState | { isCreatingAppointment: boolean }) => void }>((set) => ({
+export const useFormState = create<FormState & { id?: string, isCreatingAppointment: boolean, set: (newFormState: (FormState & { id?: string }) | { isCreatingAppointment: boolean }) => void }>((set) => ({
   ...INITIAL_STATE,
   isCreatingAppointment: false,
   set: (newFormState) => set(newFormState)

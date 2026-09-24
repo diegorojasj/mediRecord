@@ -2,7 +2,7 @@ import { addDays, eachDayOfInterval, format, isToday, startOfDay } from 'date-fn
 import { useMemo } from 'react';
 import type { AppointmentOptions } from '@/lib/api/appointments';
 import { cn } from '@/lib/utils';
-import { dateKey, eventTitle, formatStatus, shortId, statusStyle } from './calendar_functions';
+import { dateKey, eventTitle, formatStatus, statusStyle } from './calendar_functions';
 import type { CalendarEvent, EventMap } from './calendar_types';
 
 const ScheduleView = ({
@@ -70,8 +70,8 @@ const ScheduleView = ({
                         {eventTitle(options.appointmentType, event)}
                       </span>
                       <span className="block text-xs text-muted-foreground">
-                        {format(event.start, 'h:mm a')} - {format(event.end, 'h:mm a')} · Patient{' '}
-                        {shortId(event.patient_id)}
+                        {format(event.start, 'h:mm a')} - {format(event.end, 'h:mm a')} ·{' '}
+                        {event.patientName} · {event.doctorName}
                       </span>
                     </span>
                     <span

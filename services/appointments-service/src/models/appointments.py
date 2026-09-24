@@ -37,7 +37,7 @@ class Appointments(TimestampedDocument):
     reminder_sent_at: Optional[datetime] = None
 
     notes: Optional[str] = None
-    created_by_id: PydanticObjectId
+    created_by_id: Optional[PydanticObjectId] = None  # set from the logged-in user once auth is wired
 
     class Settings(TimestampedDocument.Settings):
         name = "appointments"

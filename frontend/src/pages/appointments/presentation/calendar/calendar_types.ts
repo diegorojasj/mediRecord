@@ -6,6 +6,11 @@ export type CalendarEvent = Appointment & {
   end: Date;
   searchText: string;
   start: Date;
+  // Resolved from the patients / doctors databases
+  patientName: string;
+  patientDetail?: string;
+  doctorName: string;
+  doctorDetail?: string;
 };
 
 export type CalendarDateSelection = {

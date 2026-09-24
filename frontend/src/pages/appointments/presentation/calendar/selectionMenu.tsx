@@ -3,17 +3,19 @@ import { useEffect, useRef } from 'react';
 import type { AppointmentOptions } from '@/lib/api/appointments';
 
 const MENU_WIDTH = 224;
-const MENU_HEIGHT = 44;
+const MENU_HEIGHT = 64;
 const VIEWPORT_MARGIN = 8;
 
 const SelectionMenu = ({
   options,
   position,
+  singleDay,
   onClose,
   onCreateAppointment,
 }: {
   options: AppointmentOptions
   position: { x: number; y: number };
+  singleDay: boolean;
   onClose: () => void;
   onCreateAppointment: () => void;
 }) => {
@@ -63,11 +65,16 @@ const SelectionMenu = ({
         hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30
         disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
         onClick={onCreateAppointment}
-        disabled={disableAll}
+        disabled={disableAll || !singleDay}
       >
         <CalendarPlus className="size-4 text-muted-foreground" />
         Create appointment
       </button>
+      {!singleDay && (
+        <p className="px-2 pb-1 text-[11px] text-muted-foreground">
+          Appointments take place on a single day. Select one day to create one.
+        </p>
+      )}
     </div>
   );
 };

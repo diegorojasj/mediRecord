@@ -29,7 +29,7 @@ export type Appointment = {
   reminder_sent: boolean;
   reminder_sent_at?: string | null;
   notes?: string | null;
-  created_by_id: string;
+  created_by_id?: string | null;
   created_at: string;
   updated_at: string;
 };

@@ -14,7 +14,6 @@ import {
   eventTitle,
   formatStatus,
   groupEventsByDay,
-  shortId,
   statusStyle,
 } from './calendar_functions';
 import type { CalendarEvent } from './calendar_types';
@@ -60,7 +59,7 @@ const HistoryPanel = ({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-lg">
         <SheetHeader className="border-b">
-          <SheetTitle className="flex items-center gap-2">
+          <SheetTitle className="flex items-center text-black! gap-2">
             <CalendarClock className="size-4" />
             Appointment history
           </SheetTitle>
@@ -78,7 +77,7 @@ const HistoryPanel = ({
         <div className="min-h-0 flex-1 overflow-y-auto p-4">
           {days.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
-              No appointments in {format(historyMonth, 'MMMM yyyy')}.
+              No appointments
             </p>
           ) : (
             <div className="space-y-4">
@@ -107,7 +106,7 @@ const HistoryPanel = ({
                           </span>
                           <span className="block text-xs text-muted-foreground">
                             {format(event.start, 'h:mm a')} - {format(event.end, 'h:mm a')} ·{' '}
-                            Patient {shortId(event.patient_id)}
+                            {event.patientName} · {event.doctorName}
                           </span>
                         </span>
                         <span

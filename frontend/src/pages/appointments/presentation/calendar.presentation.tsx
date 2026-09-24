@@ -31,10 +31,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { AppointmentOptions } from '@/lib/api/appointments';
 import { cn, toDateTimeLocal } from '@/lib/utils';
-import CreateFormApplication from '@/pages/appointments/application/createForm.application';
-import { INITIAL_STATE, useFormState } from '@/pages/appointments/presentation/createForm/createForm_data';
+import CreateFormApplication from '@/pages/appointments/application/creationForm.application';
+import { INITIAL_STATE, useFormState } from '@/pages/appointments/presentation/creationForm/creationForm_data';
+import { appointmentToFormState } from '@/pages/appointments/presentation/creationForm/creationForm_functions';
 import StatusFilters from '@/pages/appointments/presentation/statusFilters';
 import type { Appointment, AppointmentStatus } from '@/types/appointments_type';
+import type { Doctor } from '@/types/doctors_type';
+import type { Patient } from '@/types/patients_type';
 import AppointmentDetails from './calendar/appointmentDetails';
 import {
   WEEK_STARTS_ON,
@@ -42,6 +45,7 @@ import {
 import {
   dateKey,
   groupEventsByDay,
+  buildDirectory,
   toCalendarEvent,
   visibleRangeLabel,
 } from './calendar/calendar_functions';
@@ -56,12 +60,16 @@ import TimeGridView from './calendar/timeGridView';
 const CalendarPresentation = ({
   options,
   appointments,
+  patients,
+  doctors,
   error,
   loading,
   onRefresh,
 }: {
   options: AppointmentOptions
   appointments: Appointment[];
+  patients: Patient[];
+  doctors: Doctor[];
   error?: string | null;
   loading?: boolean;
   onRefresh?: () => void;
@@ -82,21 +90,31 @@ const CalendarPresentation = ({
   const [view, setView] = useState<CalendarView>('month');
   const dateSelectionAnchorRef = useRef<Date | null>(null);
   const dateSelectionEndRef = useRef<Date | null>(null);
-  const [visibleStatuses, setVisibleStatuses] = useState<Set<AppointmentStatus>>(
-    new Set(options.appointmentStatus.map(({ value }) => value))
+  // Track the unchecked statuses: every status is selected by default, even though
+  // the options arrive after the first render
+  const [hiddenStatuses, setHiddenStatuses] = useState<Set<AppointmentStatus>>(() => new Set());
+  const visibleStatuses = useMemo(
+    () =>
+      new Set(
+        options.appointmentStatus
+          .map(({ value }) => value)
+          .filter((status) => !hiddenStatuses.has(status)),
+      ),
+    [options, hiddenStatuses],
   );
   const [selectionMenuPosition, setSelectionMenuPosition] = useState<{
     x: number;
     y: number;
   } | null>(null);
 
+  const directory = useMemo(() => buildDirectory(patients, doctors), [patients, doctors]);
   const calendarEvents = useMemo(
     () =>
       appointments
-        .map(toCalendarEvent)
+        .map((appointment) => toCalendarEvent(appointment, directory))
         .filter((event): event is CalendarEvent => event !== null)
         .sort((a, b) => a.start.getTime() - b.start.getTime()),
-    [appointments],
+    [appointments, directory],
   );
 
   const filteredEvents = useMemo(() => {
@@ -347,8 +365,10 @@ const CalendarPresentation = ({
     handleEventSelect(event);
   };
 
+  // At least one status always stays selected
   const toggleStatus = (status: AppointmentStatus) => {
-    setVisibleStatuses((previous) => {
+    if (visibleStatuses.size === 1 && visibleStatuses.has(status)) return;
+    setHiddenStatuses((previous) => {
       const next = new Set(previous);
       if (next.has(status)) next.delete(status);
       else next.add(status);
@@ -361,15 +381,34 @@ const CalendarPresentation = ({
     return Array.from({ length: 7 }, (_, index) => addDays(start, index));
   }, [currentDate]);
 
+  const handleEditAppointment = (event: CalendarEvent) => {
+    formState.set({ ...appointmentToFormState(event), id: event.id });
+    // The panel would show stale data after saving; the calendar refreshes instead
+    setSelectedEvent(null);
+    setSelectionMenuPosition(null);
+    formState.set({ isCreatingAppointment: true });
+  };
+
+  // Appointments are single-day: only offered when exactly one day is selected
   const handleCreateAppointment = () => {
+    if (!selectionIsSingleDay) return;
     const start = new Date(activeDateRange.start);
     start.setHours(9, 0, 0, 0);
-    const end = new Date(activeDateRange.end);
-    end.setHours(9, 30, 0, 0);
+    // Today after 9:00 -> next free quarter hour instead of a time in the past
+    const now = new Date();
+    if (isSameDay(start, now) && now > start) {
+      start.setHours(now.getHours(), Math.ceil((now.getMinutes() + 1) / 15) * 15, 0, 0);
+      // Rounding up near midnight must not jump to tomorrow
+      if (!isSameDay(start, activeDateRange.start)) start.setTime(now.getTime());
+    }
+    const end = new Date(start.getTime() + 30 * 60_000);
+    // Don't let a late default slot spill into the next day
+    if (!isSameDay(start, end)) end.setTime(new Date(start).setHours(23, 59, 0, 0));
 
     formState.set({
       ...INITIAL_STATE,
-      duration_minutes: '30',
+      id: undefined,
+      duration_minutes: String(Math.round((end.getTime() - start.getTime()) / 60_000)),
       end_datetime: toDateTimeLocal(end),
       start_datetime: toDateTimeLocal(start),
     });
@@ -572,6 +611,7 @@ const CalendarPresentation = ({
         <AppointmentDetails
           options={options}
           event={selectedEvent}
+          onEdit={handleEditAppointment}
           onClose={() => setSelectedEvent(null)}
         />
       )}
@@ -580,13 +620,16 @@ const CalendarPresentation = ({
         <SelectionMenu
           options={options}
           position={selectionMenuPosition}
+          singleDay={selectionIsSingleDay}
           onClose={() => setSelectionMenuPosition(null)}
           onCreateAppointment={handleCreateAppointment}
         />
       )}
       <CreateFormApplication
         options={options}
+        appointmentId={formState.id}
         selectDateRange={selectDateRange}
+        onSaved={onRefresh}
       />
 
       <HistoryPanel

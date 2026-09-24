@@ -1,5 +1,7 @@
 import type { AppointmentOptions } from '@/lib/api/appointments';
 import type { Appointment } from '@/types/appointments_type';
+import type { Doctor } from '@/types/doctors_type';
+import type { Patient } from '@/types/patients_type';
 import CalendarPresentation from '../presentation/calendar.presentation';
 
 const EMPTY_OPTIONS: AppointmentOptions = {
@@ -8,8 +10,10 @@ const EMPTY_OPTIONS: AppointmentOptions = {
   cancelledBy: []
 };
 
-const CalendarApplication = ({ appointments, options, error, loading, onRefresh }: {
+const CalendarApplication = ({ appointments, patients, doctors, options, error, loading, onRefresh }: {
   appointments: Appointment[]
+  patients: Patient[]
+  doctors: Doctor[]
   options: AppointmentOptions | null,
   error: string | null,
   loading: boolean,
@@ -22,6 +26,8 @@ const CalendarApplication = ({ appointments, options, error, loading, onRefresh 
     <CalendarPresentation
       options={resolvedOptions}
       appointments={appointments}
+      patients={patients}
+      doctors={doctors}
       error={error}
       loading={loading}
       onRefresh={onRefresh}

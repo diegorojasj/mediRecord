@@ -1,6 +1,10 @@
 import { addDays, endOfWeek, format, startOfWeek } from 'date-fns';
+import type { SearchSelectOption } from '@/components/searchSelectField';
 import type { SelectOption } from '@/lib/utils';
 import type { Appointment, AppointmentStatus, AppointmentType } from '@/types/appointments_type';
+import type { Doctor } from '@/types/doctors_type';
+import type { Patient } from '@/types/patients_type';
+import { doctorOption, patientOption } from '../creationForm/creationForm_functions';
 import {
   FALLBACK_STATUS,
   HOUR_HEIGHT,
@@ -30,7 +34,21 @@ export const shortId = (id: string) => {
   return id ? id.slice(-6) : '------';
 };
 
-export const toCalendarEvent = (appointment: Appointment): CalendarEvent | null => {
+// Patients and doctors indexed by id, labelled the same way as in the appointment form
+export type CalendarDirectory = {
+  patients: Map<string, SearchSelectOption>;
+  doctors: Map<string, SearchSelectOption>;
+};
+
+export const buildDirectory = (patients: Patient[], doctors: Doctor[]): CalendarDirectory => ({
+  patients: new Map(patients.map((p) => [p.id, patientOption(p)])),
+  doctors: new Map(doctors.map((d) => [d.id, doctorOption(d)])),
+});
+
+export const toCalendarEvent = (
+  appointment: Appointment,
+  directory: CalendarDirectory,
+): CalendarEvent | null => {
   const start = new Date(appointment.start_datetime);
   const end = new Date(appointment.end_datetime);
 
@@ -38,13 +56,25 @@ export const toCalendarEvent = (appointment: Appointment): CalendarEvent | null 
     return null;
   }
 
+  const patient = directory.patients.get(appointment.patient_id);
+  const doctor = directory.doctors.get(appointment.doctor_id);
+  const patientName = patient?.label ?? `Patient ${shortId(appointment.patient_id)}`;
+  const doctorName = doctor?.label ?? `Doctor ${shortId(appointment.doctor_id)}`;
+
   return {
     ...appointment,
     end,
+    patientName,
+    patientDetail: patient?.description,
+    doctorName,
+    doctorDetail: doctor?.description,
     searchText: [
       appointment.id,
-      appointment.patient_id,
-      appointment.doctor_id,
+      patientName,
+      patient?.description,
+      patient?.keywords,
+      doctorName,
+      doctor?.description,
       appointment.reason,
       appointment.status,
       appointment.type,
