@@ -52,11 +52,13 @@ services:
       PORT: "8000"
       PATIENTS_SERVICE_URL: http://patients-service-prod:8004
       APPOINTMENTS_SERVICE_URL: http://appointments-service-prod:8001
+      CONFIG_SERVICE_URL: http://config-service-prod:8005
     expose:
       - "8000"
     depends_on:
       - patients-service-prod
       - appointments-service-prod
+      - config-service-prod
 
   api-gateway-dev:
     profiles: ["DEV"]
@@ -67,6 +69,7 @@ services:
       PORT: "8000"
       PATIENTS_SERVICE_URL: http://patients-service-dev:8004
       APPOINTMENTS_SERVICE_URL: http://appointments-service-dev:8001
+      CONFIG_SERVICE_URL: http://config-service-dev:8005
     volumes:
       - ./services/api-gateway:/app:z
     expose:
@@ -74,6 +77,7 @@ services:
     depends_on:
       - patients-service-dev
       - appointments-service-dev
+      - config-service-dev
 
   appointments-service-prod:
     profiles: ["PROD"]
@@ -152,6 +156,36 @@ services:
       - ./services/billing-service:/app:z
     expose:
       - "8003"
+
+  config-service-prod:
+    profiles: ["PROD"]
+    build:
+      context: ./services
+      dockerfile: ../containers/containerfiles/service.prod.containerfile
+      args:
+        SERVICE_DIR: config-service
+    environment:
+      <<: *mongodb-env
+      PORT: "8005"
+    expose:
+      - "8005"
+    depends_on:
+      - database
+
+  config-service-dev:
+    profiles: ["DEV"]
+    build:
+      context: ./services
+      dockerfile: ../containers/containerfiles/service.dev.containerfile
+    environment:
+      <<: *mongodb-env
+      PORT: "8005"
+    volumes:
+      - ./services/config-service:/app:z
+    expose:
+      - "8005"
+    depends_on:
+      - database
 
   patients-service-prod:
     profiles: ["PROD"]
