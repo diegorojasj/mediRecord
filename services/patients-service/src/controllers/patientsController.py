@@ -20,8 +20,8 @@ async def _next_record_number(db) -> str:
 
 async def get_patients(id: str | None = None):
     if id:
-        return await Patient.find_one(Patient.id == id)
-    return await Patient.find_all().to_list()
+        return await Patient.get_active(id)
+    return await Patient.find_active().to_list()
 
 async def create_patient(request: Request):
     json_data = await request.json()
@@ -37,7 +37,7 @@ async def create_patient(request: Request):
 
 async def update_patient(request: Request, id: str):
     json_data = await request.json()
-    patient = await Patient.find_one(Patient.id == id)
+    patient = await Patient.get_active(id)
     if patient:
         patient.name = json_data.get("name", patient.name)
         patient.email = json_data.get("email", patient.email)
@@ -46,7 +46,7 @@ async def update_patient(request: Request, id: str):
     return patient
 
 async def delete_patient(id: str):
-    patient = await Patient.find_one(Patient.id == id)
+    patient = await Patient.get_active(id)
     if patient:
-        await patient.delete()
+        await patient.soft_delete()
     return patient
