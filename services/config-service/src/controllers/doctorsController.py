@@ -1,19 +1,15 @@
-from beanie import PydanticObjectId
 from fastapi import HTTPException, Request
 from pydantic import ValidationError
 from pymongo.errors import DuplicateKeyError
 
 from ..models.doctor import Doctor
 
-READ_ONLY_FIELDS = {"id", "revision_id", "created_at", "updated_at"}
+READ_ONLY_FIELDS = {"id", "revision_id", "created_at", "updated_at", "deleted_at"}
 DUPLICATE_REGISTRATION = "A doctor with this professional registration number already exists"
 
 
 async def _get_or_404(id: str) -> Doctor:
-    # _id is stored as an ObjectId: comparing it with the raw string never matches
-    if not PydanticObjectId.is_valid(id):
-        raise HTTPException(status_code=404, detail="Doctor not found")
-    doctor = await Doctor.get(PydanticObjectId(id))
+    doctor = await Doctor.get_active(id)
     if doctor is None:
         raise HTTPException(status_code=404, detail="Doctor not found")
     return doctor
@@ -22,7 +18,7 @@ async def _get_or_404(id: str) -> Doctor:
 async def get_doctors(id: str | None = None) -> Doctor | list[Doctor]:
     if id:
         return await _get_or_404(id)
-    return await Doctor.find_all().to_list()
+    return await Doctor.find_active().to_list()
 
 
 async def create_doctor(request: Request) -> Doctor:
@@ -60,5 +56,5 @@ async def update_doctor(request: Request, id: str) -> Doctor:
 
 async def delete_doctor(id: str) -> Doctor:
     doctor = await _get_or_404(id)
-    await doctor.delete()
+    await doctor.soft_delete()
     return doctor

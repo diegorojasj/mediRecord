@@ -1,3 +1,4 @@
+import { useRef, type PointerEvent } from 'react';
 import type { SelectOption } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import type { WeekDay } from '@/types/doctors_type';
@@ -6,6 +7,19 @@ import type { Schedule } from './creationForm_types';
 
 const HOURS = Array.from({ length: 24 }, (_, h) => h);
 const WORKDAY_PRESET = [8, 9, 10, 11, 14, 15, 16, 17];
+
+// A drag paints every hour between the anchor and the hovered one, on a single day
+type DragState = {
+  day: WeekDay;
+  anchor: number;
+  // Hours of the day before the drag started, so shrinking the drag restores them
+  base: number[];
+  // Whether the drag selects or clears hours (decided by the first hour pressed)
+  add: boolean;
+};
+
+const hoursBetween = (a: number, b: number) =>
+  HOURS.filter((h) => h >= Math.min(a, b) && h <= Math.max(a, b));
 
 const ScheduleEditor = ({
   schedule,
@@ -16,12 +30,54 @@ const ScheduleEditor = ({
   weekDays: SelectOption<WeekDay>[];
   onChange: (day: WeekDay, hours: number[]) => void;
 }) => {
+  const dragRef = useRef<DragState | null>(null);
+  // Last hour pressed, used as the anchor of a Shift+click range
+  const lastHourRef = useRef<{ day: WeekDay; hour: number } | null>(null);
+
   const toggleHour = (day: WeekDay, hour: number) => {
     const current = schedule[day] ?? [];
     const next = current.includes(hour)
       ? current.filter((h) => h !== hour)
       : [...current, hour].sort((a, b) => a - b);
     onChange(day, next);
+  };
+
+  const applyDrag = (hour: number) => {
+    const drag = dragRef.current;
+    if (!drag) return;
+    const range = hoursBetween(drag.anchor, hour);
+    const next = drag.add
+      ? [...new Set([...drag.base, ...range])].sort((a, b) => a - b)
+      : drag.base.filter((h) => !range.includes(h));
+    onChange(drag.day, next);
+  };
+
+  const endDrag = () => {
+    dragRef.current = null;
+    window.removeEventListener('pointerup', endDrag);
+    window.removeEventListener('pointercancel', endDrag);
+  };
+
+  const startDrag = (event: PointerEvent<HTMLButtonElement>, day: WeekDay, hour: number) => {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    // Touch pointers are captured by the pressed button; release it so the
+    // hours under the finger receive pointerenter while dragging
+    event.currentTarget.releasePointerCapture(event.pointerId);
+
+    const hours = schedule[day] ?? [];
+    const last = lastHourRef.current;
+    dragRef.current = {
+      day,
+      anchor: event.shiftKey && last?.day === day ? last.hour : hour,
+      base: hours,
+      add: !hours.includes(hour),
+    };
+    lastHourRef.current = { day, hour };
+    applyDrag(hour);
+
+    window.addEventListener('pointerup', endDrag);
+    window.addEventListener('pointercancel', endDrag);
   };
 
   return (
@@ -43,7 +99,7 @@ const ScheduleEditor = ({
                 {hours.length > 0 ? 'Clear' : '8–12 / 14–18'}
               </button>
             </div>
-            <div className="grid grid-cols-8 gap-1 sm:grid-cols-12">
+            <div className="grid touch-none select-none grid-cols-8 gap-1 sm:grid-cols-12">
               {HOURS.map((hour) => {
                 const selected = hours.includes(hour);
                 return (
@@ -52,7 +108,14 @@ const ScheduleEditor = ({
                     type="button"
                     aria-pressed={selected}
                     aria-label={`${label} ${hour}:00`}
-                    onClick={() => toggleHour(day, hour)}
+                    onPointerDown={(event) => startDrag(event, day, hour)}
+                    onPointerEnter={() => {
+                      if (dragRef.current?.day === day) applyDrag(hour);
+                    }}
+                    // Pointer clicks are handled on pointerdown; this covers the keyboard
+                    onClick={(event) => {
+                      if (event.detail === 0) toggleHour(day, hour);
+                    }}
                     className={cn(
                       'rounded py-1 text-[10px] font-medium tabular-nums transition-colors',
                       selected
