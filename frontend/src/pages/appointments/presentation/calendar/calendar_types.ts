@@ -13,9 +13,4 @@ export type CalendarEvent = Appointment & {
   doctorDetail?: string;
 };
 
-export type CalendarDateSelection = {
-  end: Date;
-  start: Date;
-};
-
 export type EventMap = Map<string, CalendarEvent[]>;

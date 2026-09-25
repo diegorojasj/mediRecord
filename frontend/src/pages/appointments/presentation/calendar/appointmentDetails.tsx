@@ -1,12 +1,35 @@
 import { differenceInMinutes, format } from 'date-fns';
-import { Clock3, Pencil, Stethoscope, UserRound, X } from 'lucide-react';
+import { Clock3, Pencil, Stethoscope, Trash2, UserRound, X } from 'lucide-react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import type { AppointmentOptions } from '@/lib/api/appointments';
 import { cn } from '@/lib/utils';
-import { eventTitle, formatStatus, formatType, statusStyle } from './calendar_functions';
+import {
+  canDeleteAppointment,
+  eventTitle,
+  formatStatus,
+  formatType,
+  statusStyle,
+} from './calendar_functions';
 import type { CalendarEvent } from './calendar_types';
 
-const AppointmentDetails = ({ options, event, onEdit, onClose }: { options: AppointmentOptions, event: CalendarEvent; onEdit: (event: CalendarEvent) => void; onClose: () => void }) => {
+const AppointmentDetails = ({ options, event, onEdit, onDelete, onClose }: { options: AppointmentOptions, event: CalendarEvent; onEdit: (event: CalendarEvent) => void; onDelete: (event: CalendarEvent) => Promise<void>; onClose: () => void }) => {
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const canDelete = canDeleteAppointment(event);
+
+  const confirmDelete = async () => {
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await onDelete(event);
+    } catch (e) {
+      setDeleteError(e instanceof Error ? e.message : 'Failed to delete appointment');
+      setDeleting(false);
+    }
+  };
+
   return (
     <div className="absolute inset-x-3 top-24 z-30 max-h-[calc(100%-7rem)] overflow-auto rounded-md border bg-popover p-4 text-popover-foreground shadow-xl sm:left-auto sm:right-4 sm:top-20 sm:w-[22rem]">
       <div className="mb-3 flex items-start justify-between gap-3">
@@ -32,6 +55,23 @@ const AppointmentDetails = ({ options, event, onEdit, onClose }: { options: Appo
             <Pencil className="size-3.5" />
             <span className="sr-only">Edit appointment</span>
           </Button>
+          {canDelete && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              title="Delete appointment"
+              className="text-destructive hover:text-destructive"
+              disabled={deleting}
+              onClick={() => {
+                setDeleteError(null);
+                setConfirmingDelete(true);
+              }}
+            >
+              <Trash2 className="size-3.5" />
+              <span className="sr-only">Delete appointment</span>
+            </Button>
+          )}
           <Button type="button" variant="ghost" size="icon-sm" onClick={onClose}>
             <X className="size-3.5" />
             <span className="sr-only">Close appointment details</span>
@@ -74,6 +114,34 @@ const AppointmentDetails = ({ options, event, onEdit, onClose }: { options: Appo
           </div>
         )}
       </div>
+
+      {canDelete && confirmingDelete && (
+        <div className="mt-4 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-xs">
+          <p className="font-medium text-foreground">Delete this appointment?</p>
+          <p className="mt-0.5 text-muted-foreground">It will be removed from the calendar.</p>
+          {deleteError && <p className="mt-1.5 text-destructive">{deleteError}</p>}
+          <div className="mt-2.5 flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={deleting}
+              onClick={() => setConfirmingDelete(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              size="sm"
+              disabled={deleting}
+              onClick={confirmDelete}
+            >
+              {deleting ? 'Deleting…' : 'Delete'}
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

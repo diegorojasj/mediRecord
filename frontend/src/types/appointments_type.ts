@@ -32,4 +32,5 @@ export type Appointment = {
   created_by_id?: string | null;
   created_at: string;
   updated_at: string;
+  deleted_at?: string | null;
 };

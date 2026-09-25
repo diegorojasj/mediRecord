@@ -2,13 +2,10 @@ import type { AppointmentStatus } from '@/types/appointments_type';
 
 export const WEEK_STARTS_ON = 0;
 export const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+// The week / day grids cover the whole day and open scrolled to the start of the workday
 export const WORKDAY_START_HOUR = 7;
-export const WORKDAY_END_HOUR = 19;
 export const HOUR_HEIGHT = 72;
-export const HOURS = Array.from(
-  { length: WORKDAY_END_HOUR - WORKDAY_START_HOUR + 1 },
-  (_, index) => WORKDAY_START_HOUR + index,
-);
+export const HOURS = Array.from({ length: 24 }, (_, index) => index);
 
 export const FALLBACK_STATUS = {
   badge: 'border-slate-200 bg-slate-50 text-slate-700',

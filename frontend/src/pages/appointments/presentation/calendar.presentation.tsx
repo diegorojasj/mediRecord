@@ -2,7 +2,6 @@ import {
   addDays,
   addMonths,
   addWeeks,
-  eachDayOfInterval,
   format,
   isSameDay,
   startOfDay,
@@ -12,9 +11,7 @@ import {
 import { ChevronLeft, ChevronRight, History, RefreshCw, Search } from 'lucide-react';
 import {
   useCallback,
-  useEffect,
   useMemo,
-  useRef,
   useState
 } from 'react';
 
@@ -29,7 +26,7 @@ import {
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import type { AppointmentOptions } from '@/lib/api/appointments';
+import { deleteAppointment, type AppointmentOptions } from '@/lib/api/appointments';
 import { cn, toDateTimeLocal } from '@/lib/utils';
 import CreateFormApplication from '@/pages/appointments/application/creationForm.application';
 import { INITIAL_STATE, useFormState } from '@/pages/appointments/presentation/creationForm/creationForm_data';
@@ -49,7 +46,7 @@ import {
   toCalendarEvent,
   visibleRangeLabel,
 } from './calendar/calendar_functions';
-import type { CalendarDateSelection, CalendarEvent, CalendarView } from './calendar/calendar_types';
+import type { CalendarEvent, CalendarView } from './calendar/calendar_types';
 import HistoryPanel from './calendar/historyPanel';
 import MobileStatusStrip from './calendar/mobileStatusStrip';
 import MonthView from './calendar/monthView';
@@ -78,18 +75,10 @@ const CalendarPresentation = ({
   const formState = useFormState()
   const [currentDate, setCurrentDate] = useState(today);
   const [selectedDate, setSelectedDate] = useState(today);
-  const [selectedDateRange, setSelectedDateRange] = useState<CalendarDateSelection>(() => ({
-    end: today,
-    start: today,
-  }));
-  const [dragDateRange, setDragDateRange] = useState<CalendarDateSelection | null>(null);
-  const [isSelectingDates, setIsSelectingDates] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [view, setView] = useState<CalendarView>('month');
-  const dateSelectionAnchorRef = useRef<Date | null>(null);
-  const dateSelectionEndRef = useRef<Date | null>(null);
   // Track the unchecked statuses: every status is selected by default, even though
   // the options arrive after the first render
   const [hiddenStatuses, setHiddenStatuses] = useState<Set<AppointmentStatus>>(() => new Set());
@@ -149,39 +138,7 @@ const CalendarPresentation = ({
     return counts;
   }, [options, calendarEvents]);
 
-  const activeDateRange = dragDateRange ?? selectedDateRange;
-  const selectedRangeDays = useMemo(
-    () =>
-      eachDayOfInterval({
-        end: activeDateRange.end,
-        start: activeDateRange.start,
-      }),
-    [activeDateRange],
-  );
-  const selectedRangeEvents = useMemo(
-    () => selectedRangeDays.flatMap((day) => eventsByDay.get(dateKey(day)) ?? []),
-    [eventsByDay, selectedRangeDays],
-  );
-  const selectionIsSingleDay = isSameDay(activeDateRange.start, activeDateRange.end);
-  const selectedRangeLabel = selectionIsSingleDay
-    ? format(activeDateRange.start, 'EEEE, MMM d')
-    : `${format(activeDateRange.start, 'MMM d')} - ${format(
-      activeDateRange.end,
-      activeDateRange.start.getFullYear() === activeDateRange.end.getFullYear()
-        ? 'MMM d'
-        : 'MMM d, yyyy',
-    )}`;
-
-  const normalizeDateSelection = useCallback((start: Date, end: Date) => {
-    const normalizedStart = startOfDay(start);
-    const normalizedEnd = startOfDay(end);
-
-    if (normalizedStart.getTime() <= normalizedEnd.getTime()) {
-      return { end: normalizedEnd, start: normalizedStart };
-    }
-
-    return { end: normalizedStart, start: normalizedEnd };
-  }, []);
+  const selectedDayEvents = eventsByDay.get(dateKey(selectedDate)) ?? [];
 
   const isAtEarliestPeriod = useCallback(
     (date: Date) => {
@@ -221,137 +178,54 @@ const CalendarPresentation = ({
 
   const goToToday = () => {
     const nextToday = startOfDay(new Date());
-    dateSelectionAnchorRef.current = null;
-    dateSelectionEndRef.current = null;
     setCurrentDate(nextToday);
     setSelectedDate(nextToday);
-    setSelectedDateRange({ end: nextToday, start: nextToday });
-    setDragDateRange(null);
   };
 
-  const selectDateRange = useCallback(
-    (start: Date, end: Date, options: { updateCurrentDate?: boolean } = {}) => {
-      const nextRange = normalizeDateSelection(start, end);
-      if (nextRange.start.getTime() < today.getTime()) return;
-
-      dateSelectionAnchorRef.current = null;
-      dateSelectionEndRef.current = null;
-      setSelectedDate(nextRange.start);
-      setSelectedDateRange(nextRange);
-      setDragDateRange(null);
-      if (options.updateCurrentDate) {
-        setCurrentDate(nextRange.start);
-      }
-    },
-    [normalizeDateSelection, today],
-  );
-
-  const selectDate = (date: Date) => {
-    if (startOfDay(date).getTime() < today.getTime()) return;
-    selectDateRange(date, date);
-  };
-
-  const selectDateAndNavigate = (date: Date) => {
-    if (startOfDay(date).getTime() < today.getTime()) return;
-    selectDateRange(date, date, { updateCurrentDate: true });
-  };
-
-  const beginDateSelection = useCallback(
-    (date: Date) => {
+  // Only one day can be selected at a time: appointments take place on a single day
+  const selectDay = useCallback(
+    (date: Date, options: { updateCurrentDate?: boolean } = {}) => {
       const day = startOfDay(date);
-      if (day.getTime() < today.getTime()) return;
+      if (day.getTime() < today.getTime()) return false;
 
-      const nextRange = { end: day, start: day };
-
-      dateSelectionAnchorRef.current = day;
-      dateSelectionEndRef.current = day;
       setSelectedDate(day);
-      setDragDateRange(nextRange);
-      setIsSelectingDates(true);
-      setSelectedEvent(null);
-      setSelectionMenuPosition(null);
+      if (options.updateCurrentDate) {
+        setCurrentDate(day);
+      }
+      return true;
     },
     [today],
   );
 
-  const moveDateSelection = useCallback(
-    (date: Date) => {
-      const anchor = dateSelectionAnchorRef.current;
-      if (!anchor) return;
-
-      const day = startOfDay(date);
-      if (day.getTime() < today.getTime()) return;
-
-      dateSelectionEndRef.current = day;
-      setSelectedDate(day);
-      setDragDateRange(normalizeDateSelection(anchor, day));
+  // The form edits single-day appointments, so only the start day is selected
+  const selectFormDate = useCallback(
+    (start: Date, _end: Date, options: { updateCurrentDate?: boolean } = {}) => {
+      selectDay(start, options);
     },
-    [normalizeDateSelection, today],
+    [selectDay],
   );
 
+  const selectDate = (date: Date, position?: { x: number; y: number }) => {
+    if (!selectDay(date)) return;
+    setSelectedEvent(null);
+    setSelectionMenuPosition(position ?? null);
+  };
+
+  const selectDateAndNavigate = (date: Date) => {
+    selectDay(date, { updateCurrentDate: true });
+  };
+
   const scrollMonth = useCallback(
-    (direction: -1 | 1, selectionDate?: Date) => {
+    (direction: -1 | 1) => {
       if (direction === -1 && isAtEarliestPeriod(currentDate)) return;
 
       setCurrentDate((date) => addMonths(date, direction));
-
-      if (selectionDate && dateSelectionAnchorRef.current) {
-        moveDateSelection(selectionDate);
-      }
     },
-    [currentDate, isAtEarliestPeriod, moveDateSelection],
+    [currentDate, isAtEarliestPeriod],
   );
-
-  const commitDateSelection = useCallback(
-    (position?: { x: number; y: number }) => {
-      const anchor = dateSelectionAnchorRef.current;
-      const end = dateSelectionEndRef.current;
-
-      if (!anchor || !end) {
-        setDragDateRange(null);
-        setIsSelectingDates(false);
-        return;
-      }
-
-      const nextRange = normalizeDateSelection(anchor, end);
-      dateSelectionAnchorRef.current = null;
-      dateSelectionEndRef.current = null;
-      setSelectedDate(nextRange.start);
-      setSelectedDateRange(nextRange);
-      setDragDateRange(null);
-      setIsSelectingDates(false);
-      if (position) {
-        setSelectionMenuPosition(position);
-      }
-    },
-    [normalizeDateSelection],
-  );
-
-  useEffect(() => {
-    if (!isSelectingDates) return;
-
-    const handleWindowPointerUp = (event: PointerEvent) => {
-      commitDateSelection({ x: event.clientX, y: event.clientY });
-    };
-    const handleWindowPointerCancel = () => {
-      commitDateSelection();
-    };
-
-    window.addEventListener('pointerup', handleWindowPointerUp);
-    window.addEventListener('pointercancel', handleWindowPointerCancel);
-
-    return () => {
-      window.removeEventListener('pointerup', handleWindowPointerUp);
-      window.removeEventListener('pointercancel', handleWindowPointerCancel);
-    };
-  }, [commitDateSelection, isSelectingDates]);
 
   const handleViewChange = (nextView: CalendarView) => {
-    dateSelectionAnchorRef.current = null;
-    dateSelectionEndRef.current = null;
     setView(nextView);
-    setDragDateRange(null);
-    setIsSelectingDates(false);
     setSelectionMenuPosition(null);
   };
 
@@ -389,17 +263,22 @@ const CalendarPresentation = ({
     formState.set({ isCreatingAppointment: true });
   };
 
-  // Appointments are single-day: only offered when exactly one day is selected
+  // Errors are shown by the details panel, which stays open so the user can retry
+  const handleDeleteAppointment = async (event: CalendarEvent) => {
+    await deleteAppointment(event.id);
+    setSelectedEvent(null);
+    onRefresh?.();
+  };
+
   const handleCreateAppointment = () => {
-    if (!selectionIsSingleDay) return;
-    const start = new Date(activeDateRange.start);
+    const start = new Date(selectedDate);
     start.setHours(9, 0, 0, 0);
     // Today after 9:00 -> next free quarter hour instead of a time in the past
     const now = new Date();
     if (isSameDay(start, now) && now > start) {
       start.setHours(now.getHours(), Math.ceil((now.getMinutes() + 1) / 15) * 15, 0, 0);
       // Rounding up near midnight must not jump to tomorrow
-      if (!isSameDay(start, activeDateRange.start)) start.setTime(now.getTime());
+      if (!isSameDay(start, selectedDate)) start.setTime(now.getTime());
     }
     const end = new Date(start.getTime() + 30 * 60_000);
     // Don't let a late default slot spill into the next day
@@ -420,17 +299,14 @@ const CalendarPresentation = ({
     <section className="relative flex h-full min-h-0 w-full max-w-full min-w-0 overflow-hidden rounded-md border bg-background text-left text-foreground shadow-sm">
       <aside className="hidden w-64 shrink-0 overflow-y-auto border-r bg-background p-4 2xl:block">
         <div className="mb-5 rounded-md border bg-muted/20 p-3">
-          <p className="text-xs font-semibold text-foreground">{selectedRangeLabel}</p>
-          {!selectionIsSingleDay && (
-            <p className="mt-1 text-xs text-muted-foreground">
-              {selectedRangeDays.length} days selected
-            </p>
-          )}
+          <p className="text-xs font-semibold text-foreground">
+            {format(selectedDate, 'EEEE, MMM d')}
+          </p>
           <p className="mt-1 text-2xl font-semibold tracking-normal text-foreground">
-            {selectedRangeEvents.length}
+            {selectedDayEvents.length}
           </p>
           <p className="text-xs text-muted-foreground">
-            {selectedRangeEvents.length === 1 ? 'appointment' : 'appointments'}
+            {selectedDayEvents.length === 1 ? 'appointment' : 'appointments'}
           </p>
         </div>
 
@@ -544,11 +420,7 @@ const CalendarPresentation = ({
           {view === 'month' && (
             <MonthView
               currentDate={currentDate}
-              dateSelection={activeDateRange}
               eventsByDay={eventsByDay}
-              onDateSelectionEnd={commitDateSelection}
-              onDateSelectionMove={moveDateSelection}
-              onDateSelectionStart={beginDateSelection}
               onDateViewOpen={selectDateAndNavigate}
               onMonthScroll={scrollMonth}
               selectedDate={selectedDate}
@@ -559,12 +431,8 @@ const CalendarPresentation = ({
           )}
           {view === 'week' && (
             <TimeGridView
-              dateSelection={activeDateRange}
               days={weekDays}
               eventsByDay={eventsByDay}
-              onDateSelectionEnd={commitDateSelection}
-              onDateSelectionMove={moveDateSelection}
-              onDateSelectionStart={beginDateSelection}
               selectedDate={selectedDate}
               onDateSelect={selectDate}
               onEventSelect={handleEventSelect}
@@ -572,12 +440,8 @@ const CalendarPresentation = ({
           )}
           {view === 'day' && (
             <TimeGridView
-              dateSelection={activeDateRange}
               days={[currentDate]}
               eventsByDay={eventsByDay}
-              onDateSelectionEnd={commitDateSelection}
-              onDateSelectionMove={moveDateSelection}
-              onDateSelectionStart={beginDateSelection}
               selectedDate={selectedDate}
               onDateSelect={selectDate}
               onEventSelect={handleEventSelect}
@@ -609,9 +473,12 @@ const CalendarPresentation = ({
 
       {selectedEvent && (
         <AppointmentDetails
+          // Remount per appointment so a pending delete confirmation doesn't carry over
+          key={selectedEvent.id}
           options={options}
           event={selectedEvent}
           onEdit={handleEditAppointment}
+          onDelete={handleDeleteAppointment}
           onClose={() => setSelectedEvent(null)}
         />
       )}
@@ -620,7 +487,6 @@ const CalendarPresentation = ({
         <SelectionMenu
           options={options}
           position={selectionMenuPosition}
-          singleDay={selectionIsSingleDay}
           onClose={() => setSelectionMenuPosition(null)}
           onCreateAppointment={handleCreateAppointment}
         />
@@ -628,7 +494,8 @@ const CalendarPresentation = ({
       <CreateFormApplication
         options={options}
         appointmentId={formState.id}
-        selectDateRange={selectDateRange}
+        appointments={appointments}
+        selectDateRange={selectFormDate}
         onSaved={onRefresh}
       />
 

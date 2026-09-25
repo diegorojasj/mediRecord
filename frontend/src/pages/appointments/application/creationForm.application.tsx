@@ -5,13 +5,14 @@ import { getDoctors } from '@/lib/api/doctors';
 import { getPatients } from '@/lib/api/patients';
 import type { FormState, SelectDateRangeType } from '@/pages/appointments/presentation/creationForm/creationForm_types';
 import CreateFormPresentation from '@/pages/appointments/presentation/creationForm.presentation';
+import type { Appointment } from '@/types/appointments_type';
 import type { Doctor } from '@/types/doctors_type';
 import type { Patient } from '@/types/patients_type';
 import { useFormState } from '../presentation/creationForm/creationForm_data';
 import { minutesBetween } from '../presentation/creationForm/creationForm_functions';
 
 
-const CreateFormApplication = ({ appointmentId, options, selectDateRange, onSaved }: { appointmentId?: string, options: AppointmentOptions, selectDateRange: SelectDateRangeType, onSaved?: () => void }) => {
+const CreateFormApplication = ({ appointmentId, appointments, options, selectDateRange, onSaved }: { appointmentId?: string, appointments: Appointment[], options: AppointmentOptions, selectDateRange: SelectDateRangeType, onSaved?: () => void }) => {
   const formState = useFormState()
   // null until the first load finishes
   const [people, setPeople] = useState<{ patients: Patient[]; doctors: Doctor[] } | null>(null);
@@ -91,6 +92,7 @@ const CreateFormApplication = ({ appointmentId, options, selectDateRange, onSave
         options={options}
         patients={people?.patients ?? []}
         doctors={people?.doctors ?? []}
+        otherAppointments={appointments.filter((a) => a.id !== appointmentId)}
         peopleLoading={people === null}
         error={error}
         isEditing={!!appointmentId}

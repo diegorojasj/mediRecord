@@ -11,18 +11,28 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import type { AppointmentOptions } from '@/lib/api/appointments';
-import type { Doctor } from '@/types/doctors_type';
+import type { Appointment } from '@/types/appointments_type';
+import type { Doctor, WeekDay } from '@/types/doctors_type';
 import type { Patient } from '@/types/patients_type';
 import type { ChangeEvent, SyntheticEvent } from 'react';
 import { cn } from '@/lib/utils';
 import {
+  addDaysToDate,
   DAY_END_MINUTES,
+  doctorBookingsOn,
+  doctorConflict,
+  doctorHoursOn,
   doctorOption,
+  firstAvailableStart,
+  hourRanges,
+  type MinuteRange,
   minutesBetween,
   minutesToTime,
   patientOption,
   scheduleWarning,
   timeToMinutes,
+  weekDayOf,
+  workingWeekDays,
 } from './creationForm/creationForm_functions';
 import type { FormState } from './creationForm/creationForm_types';
 
@@ -34,6 +44,16 @@ const splitDateTime = (value: string) => {
 const combineDateTime = (date: string, time: string) => `${date}T${time || '00:00'}`;
 
 const DURATION_PRESETS = [15, 30, 45, 60, 90];
+const DEFAULT_DURATION = 30;
+// How far ahead a new appointment looks for the doctor's next free slot
+const SEARCH_AHEAD_DAYS = 14;
+
+const formatHour = (hour: number) => `${String(hour).padStart(2, '0')}:00`;
+
+const minutesOfDate = (value: string) => {
+  const date = new Date(value);
+  return date.getHours() * 60 + date.getMinutes();
+};
 
 const todayDateString = () => {
   const now = new Date();
@@ -59,11 +79,14 @@ const CreateFormPresentation = ({
   options,
   patients,
   doctors,
+  otherAppointments,
   peopleLoading,
   error,
   isEditing,
 }: {
   isEditing: boolean;
+  // Every appointment except the one being edited, to keep the doctor from being double-booked
+  otherAppointments: Appointment[];
   form: FormState;
   options: AppointmentOptions;
   patients: Patient[];
@@ -95,16 +118,72 @@ const CreateFormPresentation = ({
   const duration = minutesBetween(form.start_datetime, form.end_datetime);
   const invalidRange = duration !== null && duration <= 0;
   const doctorWarning = scheduleWarning(selectedDoctor, form.start_datetime, form.end_datetime);
-  const canSubmit = !!form.patient_id && !!form.doctor_id && !!form.type && !!duration && !invalidRange;
+  const weekDay = weekDayOf(date);
+  const doctorRanges = hourRanges(doctorHoursOn(selectedDoctor, weekDay));
+  const appointmentLength = duration && duration > 0 ? duration : DEFAULT_DURATION;
+  const bookingsOn = (day: string, doctorId = form.doctor_id) =>
+    doctorBookingsOn(otherAppointments, doctorId, day);
+  const conflict = doctorConflict(otherAppointments, form);
+  const canSubmit =
+    !!form.patient_id && !!form.doctor_id && !!form.type && !!duration && !invalidRange && !conflict;
 
   const setValue = (key: 'start_datetime' | 'end_datetime', value: string) =>
     set(key)({ target: { value } } as ChangeEvent<HTMLInputElement>);
 
+  // New appointments can't start before now
+  const earliestMinutes = (day: string) =>
+    !isEditing && day === todayDate ? (timeToMinutes(currentTimeString()) ?? 0) : 0;
+
+  // Moves the appointment, keeping its length, to the doctor's first free slot at or after
+  // fromMinutes on that day. With searchAhead, a day with no room (the doctor doesn't work,
+  // or today's hours are over) moves on to the next days. Returns false when nothing was found
+  const moveToFirstSlot = (
+    doctor: Doctor | undefined,
+    day: string,
+    fromMinutes = 0,
+    { searchAhead = false } = {},
+  ) => {
+    const daysToCheck = searchAhead ? SEARCH_AHEAD_DAYS : 1;
+    for (let offset = 0; offset < daysToCheck; offset++) {
+      const candidate = addDaysToDate(day, offset);
+      const start = firstAvailableStart(
+        doctorHoursOn(doctor, weekDayOf(candidate)),
+        appointmentLength,
+        Math.max(offset === 0 ? fromMinutes : 0, earliestMinutes(candidate)),
+        bookingsOn(candidate, doctor?.id),
+      );
+      if (start === null) continue;
+
+      setValue('start_datetime', combineDateTime(candidate, minutesToTime(start)));
+      setValue('end_datetime', combineDateTime(candidate, minutesToTime(start + appointmentLength)));
+      // The calendar follows the appointment when it moves to another day
+      if (candidate !== day) onDateRangeChange?.(candidate, candidate);
+      return true;
+    }
+    return false;
+  };
+
+  // A new appointment starts at the chosen doctor's first free working hour
+  const onDoctorChange = (doctorId: string) => {
+    setSelect('doctor_id')(doctorId);
+    if (isEditing || !date) return;
+    moveToFirstSlot(doctors.find((d) => d.id === doctorId), date, 0, { searchAhead: true });
+  };
+
   // Moving the date moves the whole appointment; the calendar follows that single day
   const onDateChange = (e: ChangeEvent<HTMLInputElement>) => {
     const nextDate = e.target.value;
-    setValue('start_datetime', combineDateTime(nextDate, startTime));
-    setValue('end_datetime', combineDateTime(nextDate, endTime));
+    const nextStart = combineDateTime(nextDate, startTime);
+    const nextEnd = combineDateTime(nextDate, endTime);
+    setValue('start_datetime', nextStart);
+    setValue('end_datetime', nextEnd);
+    // Keep the chosen time when the doctor is free then; otherwise jump to their first free slot
+    const busy =
+      scheduleWarning(selectedDoctor, nextStart, nextEnd) ||
+      doctorConflict(otherAppointments, { ...form, start_datetime: nextStart, end_datetime: nextEnd });
+    if (!isEditing && nextDate && busy) {
+      moveToFirstSlot(selectedDoctor, nextDate);
+    }
     if (nextDate) onDateRangeChange?.(nextDate, nextDate);
   };
 
@@ -160,7 +239,7 @@ const CreateFormPresentation = ({
                   loading={peopleLoading}
                   options={doctorOptions}
                   value={form.doctor_id}
-                  onChange={setSelect('doctor_id')}
+                  onChange={onDoctorChange}
                 />
               </div>
             </FieldGroup>
@@ -209,6 +288,23 @@ const CreateFormPresentation = ({
                   />
                 </Field>
               </div>
+              <DoctorHours
+                doctor={selectedDoctor}
+                weekDay={weekDay}
+                ranges={doctorRanges}
+                startMinutes={startMinutes}
+                bookings={bookingsOn(date)}
+                canMoveTo={(range) => {
+                  const start = firstAvailableStart(
+                    doctorHoursOn(selectedDoctor, weekDay),
+                    appointmentLength,
+                    Math.max(range.start * 60, earliestMinutes(date)),
+                    bookingsOn(date),
+                  );
+                  return start !== null && start < range.end * 60;
+                }}
+                onMoveTo={(range) => moveToFirstSlot(selectedDoctor, date, range.start * 60)}
+              />
               <div className="flex flex-col gap-1.5 text-xs">
                 <div className="flex flex-wrap items-center gap-1.5">
                   <span className="text-muted-foreground">
@@ -237,7 +333,14 @@ const CreateFormPresentation = ({
                 {invalidRange && (
                   <p className="text-destructive">The end must be after the start.</p>
                 )}
-                {!invalidRange && doctorWarning && (
+                {!invalidRange && conflict && (
+                  <p className="text-destructive">
+                    This doctor already has an appointment from{' '}
+                    {minutesToTime(minutesOfDate(conflict.start_datetime))} to{' '}
+                    {minutesToTime(minutesOfDate(conflict.end_datetime))}. Pick another time.
+                  </p>
+                )}
+                {!invalidRange && !conflict && doctorWarning && (
                   <p className="text-amber-600 dark:text-amber-400">{doctorWarning}</p>
                 )}
               </div>
@@ -312,6 +415,85 @@ const CreateFormPresentation = ({
         </div>
       </div>
     </form>
+  );
+};
+
+type HourRange = { start: number; end: number };
+
+// The selected doctor's working hours on the appointment's day; each range jumps to its first free slot
+const DoctorHours = ({
+  doctor,
+  weekDay,
+  ranges,
+  startMinutes,
+  bookings,
+  canMoveTo,
+  onMoveTo,
+}: {
+  doctor: Doctor | undefined;
+  weekDay: WeekDay | null;
+  ranges: HourRange[];
+  startMinutes: number | null;
+  bookings: MinuteRange[];
+  canMoveTo: (range: HourRange) => boolean;
+  onMoveTo: (range: HourRange) => void;
+}) => {
+  if (!doctor) {
+    return (
+      <p className="text-xs text-muted-foreground">Select a doctor to see their working hours.</p>
+    );
+  }
+
+  if (!weekDay) return null;
+
+  if (ranges.length === 0) {
+    const workingDays = workingWeekDays(doctor);
+    return (
+      <p className="rounded-md border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+        This doctor doesn’t work on {weekDay}.{' '}
+        {workingDays.length > 0
+          ? `Working days: ${workingDays.join(', ')}.`
+          : 'No working hours have been set.'}
+      </p>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-1.5 rounded-md border bg-muted/30 px-3 py-2 text-xs">
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="text-muted-foreground">Working hours on {weekDay}:</span>
+        {ranges.map((range) => {
+          const active =
+            startMinutes !== null &&
+            startMinutes >= range.start * 60 &&
+            startMinutes < range.end * 60;
+          const available = canMoveTo(range);
+          return (
+            <button
+              key={range.start}
+              type="button"
+              disabled={!available}
+              title={available ? 'Move the appointment to the first free time' : 'No time left in this range'}
+              onClick={() => onMoveTo(range)}
+              className={cn(
+                'rounded-full border px-2 py-0.5 text-[11px] font-medium tabular-nums transition-colors disabled:pointer-events-none disabled:opacity-40',
+                active
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'border-border bg-background text-foreground hover:bg-muted',
+              )}
+            >
+              {formatHour(range.start)}–{formatHour(range.end)}
+            </button>
+          );
+        })}
+      </div>
+      <p className="text-muted-foreground">
+        {bookings.length > 0 ? 'Already booked: ' : 'No appointments booked yet this day.'}
+        {bookings
+          .map((b) => `${minutesToTime(b.start)}–${minutesToTime(b.end)}`)
+          .join(', ')}
+      </p>
+    </div>
   );
 };
 

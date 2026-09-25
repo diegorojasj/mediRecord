@@ -10,8 +10,6 @@ import {
   HOUR_HEIGHT,
   STATUS_STYLE,
   WEEK_STARTS_ON,
-  WORKDAY_END_HOUR,
-  WORKDAY_START_HOUR,
 } from './calendar_constants';
 import type { CalendarEvent, CalendarView, EventMap } from './calendar_types';
 
@@ -122,17 +120,61 @@ export const hourLabel = (hour: number) => {
   return format(date, 'h a');
 };
 
-export const getEventPosition = (event: CalendarEvent) => {
-  const visibleStart = WORKDAY_START_HOUR * 60;
-  const visibleEnd = WORKDAY_END_HOUR * 60;
-  const eventStart = event.start.getHours() * 60 + event.start.getMinutes();
-  const eventEnd = event.end.getHours() * 60 + event.end.getMinutes();
-  const clampedStart = Math.max(eventStart, visibleStart);
-  const clampedEnd = Math.min(Math.max(eventEnd, clampedStart + 15), visibleEnd);
+const DAY_MINUTES = 24 * 60;
+const minutesOfDay = (date: Date) => date.getHours() * 60 + date.getMinutes();
+
+// Side-by-side placement of an event among the ones overlapping it
+export type EventColumn = { column: number; columns: number };
+
+// Overlapping events share the width of the day: each group of events that overlap
+// (directly or through each other) is split into as many columns as it needs
+export const layoutEventColumns = (events: CalendarEvent[]) => {
+  const layout = new Map<string, EventColumn>();
+  const sorted = [...events].sort(
+    (a, b) => a.start.getTime() - b.start.getTime() || b.end.getTime() - a.end.getTime(),
+  );
+
+  let group: { id: string; column: number }[] = [];
+  let groupEnd = -Infinity;
+  // End time of the last event placed in each column of the current group
+  let columnEnds: number[] = [];
+
+  const closeGroup = () => {
+    for (const { id, column } of group) layout.set(id, { column, columns: columnEnds.length });
+    group = [];
+    columnEnds = [];
+  };
+
+  for (const event of sorted) {
+    const start = event.start.getTime();
+    const end = event.end.getTime();
+    if (start >= groupEnd) closeGroup();
+
+    let column = columnEnds.findIndex((columnEnd) => columnEnd <= start);
+    if (column === -1) column = columnEnds.push(end) - 1;
+    else columnEnds[column] = end;
+
+    group.push({ id: event.id, column });
+    groupEnd = Math.max(groupEnd, end);
+  }
+  closeGroup();
+
+  return layout;
+};
+
+// Only upcoming appointments can be deleted: ongoing and past ones stay in the history
+export const canDeleteAppointment = (event: CalendarEvent, now = new Date()) =>
+  event.start.getTime() > now.getTime();
+
+export const getEventPosition = (event: CalendarEvent, { column, columns }: EventColumn) => {
+  const start = minutesOfDay(event.start);
+  const end = Math.min(Math.max(minutesOfDay(event.end), start + 15), DAY_MINUTES);
 
   return {
-    height: Math.max(30, ((clampedEnd - clampedStart) / 60) * HOUR_HEIGHT),
-    top: ((clampedStart - visibleStart) / 60) * HOUR_HEIGHT,
+    height: Math.max(28, ((end - start) / 60) * HOUR_HEIGHT),
+    left: `calc(${(column / columns) * 100}% + 2px)`,
+    top: (start / 60) * HOUR_HEIGHT,
+    width: `calc(${100 / columns}% - 4px)`,
   };
 };
 

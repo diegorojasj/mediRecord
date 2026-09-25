@@ -61,6 +61,12 @@ export async function updateAppointments(id: string, form: FormState): Promise<A
   return res.json();
 }
 
+// Soft delete: the backend keeps the record and marks it with deleted_at
+export async function deleteAppointment(id: string): Promise<void> {
+  const res = await fetch(`${BASE}/${id}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error(await errorMessage(res));
+}
+
 // Empty optional inputs are sent as null: the backend accepts null, not "" (e.g. cancelled_by is a Literal)
 const orNull = (value: string) => value.trim() || null;
 
