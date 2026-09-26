@@ -76,6 +76,8 @@ const CalendarPresentation = ({
   const [currentDate, setCurrentDate] = useState(today);
   const [selectedDate, setSelectedDate] = useState(today);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  // The element that was clicked, so the details open next to it
+  const [selectedAnchor, setSelectedAnchor] = useState<HTMLElement | null>(null);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [view, setView] = useState<CalendarView>('month');
@@ -229,9 +231,10 @@ const CalendarPresentation = ({
     setSelectionMenuPosition(null);
   };
 
-  const handleEventSelect = (event: CalendarEvent) => {
+  const handleEventSelect = (event: CalendarEvent, anchor?: HTMLElement) => {
     setSelectionMenuPosition(null);
     setSelectedEvent(event);
+    setSelectedAnchor(anchor ?? null);
   };
 
   const handleHistoryEventSelect = (event: CalendarEvent) => {
@@ -419,6 +422,7 @@ const CalendarPresentation = ({
         <div className="min-h-0 flex-1 overflow-auto">
           {view === 'month' && (
             <MonthView
+              options={options}
               currentDate={currentDate}
               eventsByDay={eventsByDay}
               onDateViewOpen={selectDateAndNavigate}
@@ -431,8 +435,13 @@ const CalendarPresentation = ({
           )}
           {view === 'week' && (
             <TimeGridView
+              options={options}
               days={weekDays}
               eventsByDay={eventsByDay}
+              onDateViewOpen={(day) => {
+                selectDateAndNavigate(day);
+                handleViewChange('day');
+              }}
               selectedDate={selectedDate}
               onDateSelect={selectDate}
               onEventSelect={handleEventSelect}
@@ -440,6 +449,7 @@ const CalendarPresentation = ({
           )}
           {view === 'day' && (
             <TimeGridView
+              options={options}
               days={[currentDate]}
               eventsByDay={eventsByDay}
               selectedDate={selectedDate}
@@ -477,6 +487,7 @@ const CalendarPresentation = ({
           key={selectedEvent.id}
           options={options}
           event={selectedEvent}
+          anchor={selectedAnchor}
           onEdit={handleEditAppointment}
           onDelete={handleDeleteAppointment}
           onClose={() => setSelectedEvent(null)}

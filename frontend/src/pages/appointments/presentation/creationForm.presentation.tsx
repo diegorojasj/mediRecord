@@ -83,8 +83,11 @@ const CreateFormPresentation = ({
   peopleLoading,
   error,
   isEditing,
+  scheduleLocked,
 }: {
   isEditing: boolean;
+  // The appointment already started: patient, doctor, schedule, type and reason are read-only
+  scheduleLocked: boolean;
   // Every appointment except the one being edited, to keep the doctor from being double-booked
   otherAppointments: Appointment[];
   form: FormState;
@@ -102,9 +105,11 @@ const CreateFormPresentation = ({
   const { date, time: startTime } = splitDateTime(form.start_datetime);
   const { time: endTime } = splitDateTime(form.end_datetime);
   const todayDate = todayDateString();
-  // New appointments can't be in the past; existing ones may be (e.g. marking one as completed)
-  const minDate = isEditing ? undefined : todayDate;
-  const minStartTime = !isEditing && date === todayDate ? currentTimeString() : undefined;
+  // Upcoming appointments can't be (re)scheduled in the past; started ones keep their time
+  const minDate = scheduleLocked ? undefined : todayDate;
+  const minStartTime = !scheduleLocked && date === todayDate ? currentTimeString() : undefined;
+  const startsInPast =
+    !scheduleLocked && !!form.start_datetime && new Date(form.start_datetime).getTime() <= Date.now();
   const startMinutes = timeToMinutes(startTime);
 
   // Only active records can be booked; keep the current one visible when editing
@@ -123,16 +128,23 @@ const CreateFormPresentation = ({
   const appointmentLength = duration && duration > 0 ? duration : DEFAULT_DURATION;
   const bookingsOn = (day: string, doctorId = form.doctor_id) =>
     doctorBookingsOn(otherAppointments, doctorId, day);
-  const conflict = doctorConflict(otherAppointments, form);
+  // A started appointment's time can't change, so an old overlap mustn't block recording its outcome
+  const conflict = scheduleLocked ? undefined : doctorConflict(otherAppointments, form);
   const canSubmit =
-    !!form.patient_id && !!form.doctor_id && !!form.type && !!duration && !invalidRange && !conflict;
+    !!form.patient_id &&
+    !!form.doctor_id &&
+    !!form.type &&
+    !!duration &&
+    !invalidRange &&
+    !conflict &&
+    !startsInPast;
 
   const setValue = (key: 'start_datetime' | 'end_datetime', value: string) =>
     set(key)({ target: { value } } as ChangeEvent<HTMLInputElement>);
 
-  // New appointments can't start before now
+  // Appointments can't be scheduled before now
   const earliestMinutes = (day: string) =>
-    !isEditing && day === todayDate ? (timeToMinutes(currentTimeString()) ?? 0) : 0;
+    !scheduleLocked && day === todayDate ? (timeToMinutes(currentTimeString()) ?? 0) : 0;
 
   // Moves the appointment, keeping its length, to the doctor's first free slot at or after
   // fromMinutes on that day. With searchAhead, a day with no room (the doctor doesn't work,
@@ -163,27 +175,19 @@ const CreateFormPresentation = ({
     return false;
   };
 
-  // A new appointment starts at the chosen doctor's first free working hour
+  // Each time a doctor is picked, the appointment moves to their first free working hour.
+  // This is the only automatic time change: date and time edits are left as the user sets them
   const onDoctorChange = (doctorId: string) => {
     setSelect('doctor_id')(doctorId);
-    if (isEditing || !date) return;
+    if (!date) return;
     moveToFirstSlot(doctors.find((d) => d.id === doctorId), date, 0, { searchAhead: true });
   };
 
   // Moving the date moves the whole appointment; the calendar follows that single day
   const onDateChange = (e: ChangeEvent<HTMLInputElement>) => {
     const nextDate = e.target.value;
-    const nextStart = combineDateTime(nextDate, startTime);
-    const nextEnd = combineDateTime(nextDate, endTime);
-    setValue('start_datetime', nextStart);
-    setValue('end_datetime', nextEnd);
-    // Keep the chosen time when the doctor is free then; otherwise jump to their first free slot
-    const busy =
-      scheduleWarning(selectedDoctor, nextStart, nextEnd) ||
-      doctorConflict(otherAppointments, { ...form, start_datetime: nextStart, end_datetime: nextEnd });
-    if (!isEditing && nextDate && busy) {
-      moveToFirstSlot(selectedDoctor, nextDate);
-    }
+    setValue('start_datetime', combineDateTime(nextDate, startTime));
+    setValue('end_datetime', combineDateTime(nextDate, endTime));
     if (nextDate) onDateRangeChange?.(nextDate, nextDate);
   };
 
@@ -211,7 +215,11 @@ const CreateFormPresentation = ({
         <DialogTitle className="!text-gray-900 dark:!text-gray-50">
           {isEditing ? 'Edit Appointment' : 'Register Appointment'}
         </DialogTitle>
-        <DialogDescription>Fill in the appointment details below.</DialogDescription>
+        <DialogDescription>
+          {scheduleLocked
+            ? 'This appointment has already started: only its status, cancellation and notes can change.'
+            : 'Fill in the appointment details below.'}
+        </DialogDescription>
       </DialogHeader>
 
       <div className="min-h-0 flex-1 overflow-y-auto">
@@ -230,6 +238,7 @@ const CreateFormPresentation = ({
                   options={patientOptions}
                   value={form.patient_id}
                   onChange={setSelect('patient_id')}
+                  disabled={scheduleLocked}
                 />
                 <SearchSelectField
                   id="doctor_id"
@@ -240,6 +249,7 @@ const CreateFormPresentation = ({
                   options={doctorOptions}
                   value={form.doctor_id}
                   onChange={onDoctorChange}
+                  disabled={scheduleLocked}
                 />
               </div>
             </FieldGroup>
@@ -260,6 +270,7 @@ const CreateFormPresentation = ({
                     min={minDate}
                     value={date}
                     onChange={onDateChange}
+                    disabled={scheduleLocked}
                     required
                   />
                 </Field>
@@ -272,6 +283,7 @@ const CreateFormPresentation = ({
                     min={minStartTime}
                     value={startTime}
                     onChange={onStartTimeChange}
+                    disabled={scheduleLocked}
                     required
                   />
                 </Field>
@@ -284,11 +296,12 @@ const CreateFormPresentation = ({
                     min={startTime || undefined}
                     value={endTime}
                     onChange={onEndTimeChange}
+                    disabled={scheduleLocked}
                     required
                   />
                 </Field>
               </div>
-              <DoctorHours
+              {!scheduleLocked && <DoctorHours
                 doctor={selectedDoctor}
                 weekDay={weekDay}
                 ranges={doctorRanges}
@@ -304,7 +317,7 @@ const CreateFormPresentation = ({
                   return start !== null && start < range.end * 60;
                 }}
                 onMoveTo={(range) => moveToFirstSlot(selectedDoctor, date, range.start * 60)}
-              />
+              />}
               <div className="flex flex-col gap-1.5 text-xs">
                 <div className="flex flex-wrap items-center gap-1.5">
                   <span className="text-muted-foreground">
@@ -317,7 +330,9 @@ const CreateFormPresentation = ({
                     <button
                       key={minutes}
                       type="button"
-                      disabled={startMinutes === null || startMinutes + minutes > DAY_END_MINUTES}
+                      disabled={
+                        scheduleLocked || startMinutes === null || startMinutes + minutes > DAY_END_MINUTES
+                      }
                       onClick={() => applyDuration(minutes)}
                       className={cn(
                         'rounded-full border px-2 py-0.5 text-[10px] font-medium transition-colors disabled:pointer-events-none disabled:opacity-40',
@@ -333,14 +348,17 @@ const CreateFormPresentation = ({
                 {invalidRange && (
                   <p className="text-destructive">The end must be after the start.</p>
                 )}
-                {!invalidRange && conflict && (
+                {!invalidRange && startsInPast && (
+                  <p className="text-destructive">The appointment can’t start at a time that has already passed.</p>
+                )}
+                {!invalidRange && !startsInPast && conflict && (
                   <p className="text-destructive">
                     This doctor already has an appointment from{' '}
                     {minutesToTime(minutesOfDate(conflict.start_datetime))} to{' '}
                     {minutesToTime(minutesOfDate(conflict.end_datetime))}. Pick another time.
                   </p>
                 )}
-                {!invalidRange && !conflict && doctorWarning && (
+                {!scheduleLocked && !invalidRange && !startsInPast && !conflict && doctorWarning && (
                   <p className="text-amber-600 dark:text-amber-400">{doctorWarning}</p>
                 )}
               </div>
@@ -360,6 +378,7 @@ const CreateFormPresentation = ({
                   options={options.appointmentType}
                   value={form.type}
                   onChange={setSelect('type')}
+                  disabled={scheduleLocked}
                 />
                 <SelectField
                   id="status"
@@ -371,7 +390,7 @@ const CreateFormPresentation = ({
               </div>
               <Field>
                 <Label htmlFor="reason">Reason</Label>
-                <Input id="reason" value={form.reason} onChange={set('reason')} />
+                <Input id="reason" value={form.reason} onChange={set('reason')} disabled={scheduleLocked} />
               </Field>
               <Field>
                 <Label htmlFor="notes">Notes</Label>

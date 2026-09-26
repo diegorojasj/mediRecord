@@ -1,25 +1,44 @@
 import { format, isSameDay, isToday } from 'date-fns';
-import { useEffect, useRef } from 'react';
-import { dateKey, getEventPosition, hourLabel, layoutEventColumns } from './calendar_functions';
+import { useEffect, useRef, useState } from 'react';
+import type { AppointmentOptions } from '@/lib/api/appointments';
+import { dateKey, getEventPosition, hourLabel, layoutDayEvents } from './calendar_functions';
 import type { CalendarEvent, EventMap } from './calendar_types';
 import { cn } from '@/lib/utils';
 import { HOUR_HEIGHT, HOURS, WORKDAY_START_HOUR } from './calendar_constants';
 import AppointmentPill from './appointmentPill';
+import EventListPopover, { type EventList } from './eventListPopover';
+import { useMeasuredElement } from './useMeasuredElement';
+
+// Narrower than this, a pill can't show its start time: overlapping appointments that
+// don't fit collapse into a "+N" block instead of being squeezed
+const MIN_EVENT_WIDTH = 64;
+
+// How many appointments fit side by side in a day column
+const columnsThatFit = (column: HTMLElement) =>
+  Math.max(1, Math.floor(column.clientWidth / MIN_EVENT_WIDTH));
 
 const TimeGridView = ({
+  options,
   days,
   eventsByDay,
   onDateSelect,
   onEventSelect,
+  onDateViewOpen,
   selectedDate,
 }: {
+  options: AppointmentOptions;
   days: Date[];
   eventsByDay: EventMap;
   onDateSelect: (date: Date, position?: { x: number; y: number }) => void;
-  onEventSelect: (event: CalendarEvent) => void;
+  onEventSelect: (event: CalendarEvent, anchor?: HTMLElement) => void;
+  // Omitted in the day view, where the list is already the whole day
+  onDateViewOpen?: (date: Date) => void;
   selectedDate: Date;
 }) => {
   const now = new Date();
+  // Every day column has the same width, so measuring the first one is enough
+  const [columnRef, maxColumns] = useMeasuredElement(columnsThatFit, Infinity);
+  const [eventList, setEventList] = useState<EventList | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const daysKey = days.map(dateKey).join();
   // Open at the start of the workday, or earlier when an appointment starts before it
@@ -95,16 +114,17 @@ const TimeGridView = ({
             </div>
           ))}
         </div>
-        {days.map((day) => {
+        {days.map((day, index) => {
           const dayEvents = eventsByDay.get(dateKey(day)) ?? [];
           const isSelected = isSameDay(day, selectedDate);
-          const columns = layoutEventColumns(dayEvents);
+          const layout = layoutDayEvents(dayEvents, maxColumns);
           const showNow = isSameDay(day, now);
           const nowTop = ((now.getHours() * 60 + now.getMinutes()) / 60) * HOUR_HEIGHT;
 
           return (
             <div
               key={dateKey(day)}
+              ref={index === 0 ? columnRef : undefined}
               className={cn('relative select-none border-r', isSelected && 'bg-sky-50/50')}
               onDragStart={(event) => event.preventDefault()}
               onClick={(event) => onDateSelect(day, { x: event.clientX, y: event.clientY })}
@@ -125,10 +145,10 @@ const TimeGridView = ({
                 </div>
               )}
               {dayEvents.map((event) => {
-                const position = getEventPosition(
-                  event,
-                  columns.get(event.id) ?? { column: 0, columns: 1 },
-                );
+                const column = layout.columns.get(event.id);
+                // Collapsed into an overflow block
+                if (!column) return null;
+                const position = getEventPosition(event, column);
 
                 return (
                   <div
@@ -141,10 +161,39 @@ const TimeGridView = ({
                   </div>
                 );
               })}
+              {layout.overflow.map((block) => (
+                <button
+                  key={block.events[0].id}
+                  type="button"
+                  title={`${block.events.length} more appointments`}
+                  className="absolute z-10 flex items-start justify-center overflow-hidden rounded border border-dashed border-border bg-muted/80 px-1 py-0.5 text-[11px] font-semibold text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30"
+                  style={getEventPosition(block, block)}
+                  onClick={(clickEvent) => {
+                    clickEvent.stopPropagation();
+                    setEventList({
+                      title: `${format(block.start, 'EEE, MMM d')} · ${format(block.start, 'h:mm a')} – ${format(block.end, 'h:mm a')}`,
+                      events: block.events,
+                      anchor: clickEvent.currentTarget,
+                      day,
+                    });
+                  }}
+                >
+                  +{block.events.length}
+                </button>
+              ))}
             </div>
           );
         })}
       </div>
+      {eventList && (
+        <EventListPopover
+          options={options}
+          list={eventList}
+          onEventSelect={onEventSelect}
+          onOpenDay={onDateViewOpen}
+          onClose={() => setEventList(null)}
+        />
+      )}
     </div>
   );
 };

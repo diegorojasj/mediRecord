@@ -9,6 +9,7 @@ import type { Appointment } from '@/types/appointments_type';
 import type { Doctor } from '@/types/doctors_type';
 import type { Patient } from '@/types/patients_type';
 import { useFormState } from '../presentation/creationForm/creationForm_data';
+import { hasAppointmentStarted } from '../presentation/calendar/calendar_functions';
 import { minutesBetween } from '../presentation/creationForm/creationForm_functions';
 
 
@@ -79,6 +80,10 @@ const CreateFormApplication = ({ appointmentId, appointments, options, selectDat
     }
   };
 
+  // Decided by the saved start, not the form's: moving the time in the form doesn't unlock it
+  const savedAppointment = appointments.find((a) => a.id === appointmentId);
+  const scheduleLocked = !!savedAppointment && hasAppointmentStarted(savedAppointment.start_datetime);
+
   const onOpenChange = (newValue: boolean) => formState.set({ isCreatingAppointment: newValue });
 
   return <Dialog open={formState.isCreatingAppointment} onOpenChange={onOpenChange}>
@@ -96,6 +101,7 @@ const CreateFormApplication = ({ appointmentId, appointments, options, selectDat
         peopleLoading={people === null}
         error={error}
         isEditing={!!appointmentId}
+        scheduleLocked={scheduleLocked}
       />
     </DialogContent>
   </Dialog>

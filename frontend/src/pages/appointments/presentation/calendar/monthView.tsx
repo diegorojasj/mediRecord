@@ -1,4 +1,5 @@
-import { useMemo, useRef, type WheelEvent } from 'react';
+import { useMemo, useRef, useState, type WheelEvent } from 'react';
+import type { AppointmentOptions } from '@/lib/api/appointments';
 import type {
   CalendarEvent,
   CalendarView,
@@ -20,9 +21,18 @@ import { WEEK_STARTS_ON, WEEKDAYS } from './calendar_constants';
 import { dateKey } from './calendar_functions';
 import { cn } from '@/lib/utils';
 import AppointmentPill from './appointmentPill';
+import EventListPopover, { type EventList } from './eventListPopover';
+import { useMeasuredElement } from './useMeasuredElement';
 
 const WHEEL_NAVIGATION_COOLDOWN = 220;
 const WHEEL_NAVIGATION_THRESHOLD = 50;
+// How many rows fit in a day's list. Compact pills and the "more" button are h-5 (1.25rem,
+// scaled with the root font size) and are stacked with the list's row gap
+const rowsThatFit = (list: HTMLElement) => {
+  const rowHeight = 1.25 * parseFloat(getComputedStyle(document.documentElement).fontSize);
+  const gap = parseFloat(getComputedStyle(list).rowGap) || 0;
+  return Math.max(1, Math.floor((list.clientHeight + gap) / (rowHeight + gap)));
+};
 
 const getVisibleMonthDays = (date: Date) => {
   const monthStart = startOfMonth(date);
@@ -35,6 +45,7 @@ const getVisibleMonthDays = (date: Date) => {
 };
 
 const MonthView = ({
+  options,
   currentDate,
   eventsByDay,
   onDateSelect,
@@ -44,15 +55,19 @@ const MonthView = ({
   selectedDate,
   setView,
 }: {
+  options: AppointmentOptions;
   currentDate: Date;
   eventsByDay: EventMap;
   onDateSelect: (date: Date, position?: { x: number; y: number }) => void;
   onDateViewOpen: (date: Date) => void;
-  onEventSelect: (event: CalendarEvent) => void;
+  onEventSelect: (event: CalendarEvent, anchor?: HTMLElement) => void;
   onMonthScroll: (direction: -1 | 1) => void;
   selectedDate: Date;
   setView: (view: CalendarView) => void;
 }) => {
+  // Every day's list has the same height, so measuring the first one is enough
+  const [listRef, rows] = useMeasuredElement(rowsThatFit, 3);
+  const [eventList, setEventList] = useState<EventList | null>(null);
   const lastWheelNavigationRef = useRef(0);
   const wheelDeltaRef = useRef(0);
 
@@ -60,7 +75,7 @@ const MonthView = ({
   const today = useMemo(() => startOfDay(new Date()), []);
 
   const handleWheel = (event: WheelEvent<HTMLDivElement>) => {
-    if (event.ctrlKey) return;
+    if (event.ctrlKey || eventList) return;
 
     const primaryDelta =
       Math.abs(event.deltaY) >= Math.abs(event.deltaX) ? event.deltaY : event.deltaX;
@@ -96,9 +111,11 @@ const MonthView = ({
         ))}
       </div>
       <div className="grid min-h-0 flex-1 grid-cols-7 auto-rows-fr">
-        {days.map((day) => {
+        {days.map((day, index) => {
           const dayEvents = eventsByDay.get(dateKey(day)) ?? [];
-          const visibleEvents = dayEvents.slice(0, 3);
+          // Fill the day; when some don't fit, the last row becomes the "more" button
+          const visibleEvents =
+            dayEvents.length <= rows ? dayEvents : dayEvents.slice(0, rows - 1);
           const hiddenEvents = dayEvents.length - visibleEvents.length;
           const outside = !isSameMonth(day, currentDate);
           const isPast = day.getTime() < today.getTime();
@@ -108,7 +125,7 @@ const MonthView = ({
             <div
               key={dateKey(day)}
               className={cn(
-                'min-h-0 select-none overflow-hidden border-b border-r p-1 sm:p-1.5',
+                'flex min-h-0 select-none flex-col overflow-hidden border-b border-r p-1 sm:p-1.5',
                 isPast ? 'cursor-not-allowed' : 'cursor-pointer',
                 outside && 'bg-muted/20 text-muted-foreground',
                 isPast && !outside && 'bg-muted/10 text-muted-foreground',
@@ -127,7 +144,7 @@ const MonthView = ({
               <button
                 type="button"
                 className={cn(
-                  'mb-0.5 inline-flex size-6 items-center justify-center rounded-full text-[11px] font-medium transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 sm:mb-1 sm:size-7 sm:text-xs',
+                  'mb-0.5 inline-flex size-6 shrink-0 items-center justify-center rounded-full text-[11px] font-medium transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 sm:mb-1 sm:size-7 sm:text-xs',
                   isPast && 'cursor-not-allowed text-muted-foreground hover:bg-transparent',
                   isToday(day) && 'bg-[#1a73e8] text-white hover:bg-[#1967d2]',
                   isSelected && !isToday(day) && 'bg-sky-600 text-white hover:bg-sky-700',
@@ -136,8 +153,12 @@ const MonthView = ({
                 {format(day, 'd')}
               </button>
               <div
-                className="space-y-0.5 sm:space-y-1"
-                onClick={(event) => event.stopPropagation()}
+                ref={index === 0 ? listRef : undefined}
+                className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-hidden"
+                // Clicks on an appointment stay here; clicks on the empty space select the day
+                onClick={(event) => {
+                  if (event.target !== event.currentTarget) event.stopPropagation();
+                }}
               >
                 {visibleEvents.map((event) => (
                   <AppointmentPill key={event.id} compact event={event} onSelect={onEventSelect} />
@@ -145,13 +166,17 @@ const MonthView = ({
                 {hiddenEvents > 0 && (
                   <button
                     type="button"
-                    className="h-5 rounded px-1 text-[10px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground sm:px-1.5 sm:text-[11px]"
-                    onClick={() => {
-                      onDateViewOpen(day);
-                      setView('day');
-                    }}
+                    className="h-5 shrink-0 rounded px-1 text-left text-[10px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground sm:px-1.5 sm:text-[11px]"
+                    onClick={(clickEvent) =>
+                      setEventList({
+                        title: format(day, 'EEEE, MMMM d'),
+                        events: dayEvents,
+                        anchor: clickEvent.currentTarget,
+                        day,
+                      })
+                    }
                   >
-                    {hiddenEvents} more
+                    {visibleEvents.length === 0 ? `${hiddenEvents} appts` : `${hiddenEvents} more`}
                   </button>
                 )}
               </div>
@@ -159,6 +184,18 @@ const MonthView = ({
           );
         })}
       </div>
+      {eventList && (
+        <EventListPopover
+          options={options}
+          list={eventList}
+          onEventSelect={onEventSelect}
+          onOpenDay={(day) => {
+            onDateViewOpen(day);
+            setView('day');
+          }}
+          onClose={() => setEventList(null)}
+        />
+      )}
     </div>
   );
 };

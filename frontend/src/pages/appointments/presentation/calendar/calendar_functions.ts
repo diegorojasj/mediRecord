@@ -126,21 +126,57 @@ const minutesOfDay = (date: Date) => date.getHours() * 60 + date.getMinutes();
 // Side-by-side placement of an event among the ones overlapping it
 export type EventColumn = { column: number; columns: number };
 
+// Appointments that didn't get a column of their own, shown as one "+N" block over their time
+export type OverflowBlock = EventColumn & { events: CalendarEvent[]; start: Date; end: Date };
+
+export type DayLayout = {
+  columns: Map<string, EventColumn>;
+  overflow: OverflowBlock[];
+};
+
 // Overlapping events share the width of the day: each group of events that overlap
-// (directly or through each other) is split into as many columns as it needs
-export const layoutEventColumns = (events: CalendarEvent[]) => {
-  const layout = new Map<string, EventColumn>();
+// (directly or through each other) is split into as many columns as it needs, up to
+// maxColumns. A group needing more keeps maxColumns - 1 columns of events, and the rest
+// collapse into blocks in the last column, one per stretch of time they cover
+export const layoutDayEvents = (events: CalendarEvent[], maxColumns = Infinity): DayLayout => {
+  const layout: DayLayout = { columns: new Map(), overflow: [] };
   const sorted = [...events].sort(
     (a, b) => a.start.getTime() - b.start.getTime() || b.end.getTime() - a.end.getTime(),
   );
 
-  let group: { id: string; column: number }[] = [];
+  let group: { event: CalendarEvent; column: number }[] = [];
   let groupEnd = -Infinity;
   // End time of the last event placed in each column of the current group
   let columnEnds: number[] = [];
 
   const closeGroup = () => {
-    for (const { id, column } of group) layout.set(id, { column, columns: columnEnds.length });
+    const needed = columnEnds.length;
+    if (needed <= maxColumns) {
+      for (const { event, column } of group) layout.columns.set(event.id, { column, columns: needed });
+    } else {
+      const shown = Math.max(0, maxColumns - 1);
+      const hidden: CalendarEvent[] = [];
+      for (const { event, column } of group) {
+        if (column < shown) layout.columns.set(event.id, { column, columns: maxColumns });
+        else hidden.push(event);
+      }
+      // Hidden events come in start order: merge the ones whose times touch into one block
+      for (const event of hidden) {
+        const last = layout.overflow.at(-1);
+        if (last && last.column === shown && event.start.getTime() < last.end.getTime()) {
+          last.events.push(event);
+          if (event.end > last.end) last.end = event.end;
+        } else {
+          layout.overflow.push({
+            column: shown,
+            columns: maxColumns,
+            events: [event],
+            start: event.start,
+            end: event.end,
+          });
+        }
+      }
+    }
     group = [];
     columnEnds = [];
   };
@@ -154,7 +190,7 @@ export const layoutEventColumns = (events: CalendarEvent[]) => {
     if (column === -1) column = columnEnds.push(end) - 1;
     else columnEnds[column] = end;
 
-    group.push({ id: event.id, column });
+    group.push({ event, column });
     groupEnd = Math.max(groupEnd, end);
   }
   closeGroup();
@@ -163,12 +199,20 @@ export const layoutEventColumns = (events: CalendarEvent[]) => {
 };
 
 // Only upcoming appointments can be deleted: ongoing and past ones stay in the history
-export const canDeleteAppointment = (event: CalendarEvent, now = new Date()) =>
-  event.start.getTime() > now.getTime();
+// Once an appointment starts, what was booked is part of the history (the backend enforces it):
+// it can't be deleted, and only its outcome (status, cancellation, notes) can be edited
+export const hasAppointmentStarted = (start: Date | string, now = new Date()) =>
+  new Date(start).getTime() <= now.getTime();
 
-export const getEventPosition = (event: CalendarEvent, { column, columns }: EventColumn) => {
-  const start = minutesOfDay(event.start);
-  const end = Math.min(Math.max(minutesOfDay(event.end), start + 15), DAY_MINUTES);
+export const canDeleteAppointment = (event: CalendarEvent, now = new Date()) =>
+  !hasAppointmentStarted(event.start, now);
+
+export const getEventPosition = (
+  { start: startDate, end: endDate }: { start: Date; end: Date },
+  { column, columns }: EventColumn,
+) => {
+  const start = minutesOfDay(startDate);
+  const end = Math.min(Math.max(minutesOfDay(endDate), start + 15), DAY_MINUTES);
 
   return {
     height: Math.max(28, ((end - start) / 60) * HOUR_HEIGHT),

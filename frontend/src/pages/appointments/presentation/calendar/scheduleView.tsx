@@ -16,7 +16,7 @@ const ScheduleView = ({
   currentDate: Date;
   eventsByDay: EventMap;
   onDateSelect: (date: Date) => void;
-  onEventSelect: (event: CalendarEvent) => void;
+  onEventSelect: (event: CalendarEvent, anchor?: HTMLElement) => void;
 }) => {
   const days = useMemo(
     () =>
@@ -34,8 +34,13 @@ const ScheduleView = ({
           const dayEvents = eventsByDay.get(dateKey(day)) ?? [];
 
           return (
-            <div key={dateKey(day)} className="grid gap-3 p-3 sm:grid-cols-[9rem_1fr] sm:p-4">
-              <button type="button" className="text-left" onClick={() => onDateSelect(day)}>
+            <div key={dateKey(day)} className="grid gap-2 p-3 sm:grid-cols-[9rem_1fr] sm:gap-3 sm:p-4">
+              {/* Busy days are long: the date stays in view while scrolling through them */}
+              <button
+                type="button"
+                className="self-start text-left sm:sticky sm:top-0"
+                onClick={() => onDateSelect(day)}
+              >
                 <span className="block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   {format(day, 'EEE')}
                 </span>
@@ -47,8 +52,13 @@ const ScheduleView = ({
                 >
                   {format(day, 'MMM d')}
                 </span>
+                {dayEvents.length > 0 && (
+                  <span className="mt-1 block text-xs text-muted-foreground">
+                    {dayEvents.length} {dayEvents.length === 1 ? 'appointment' : 'appointments'}
+                  </span>
+                )}
               </button>
-              <div className="space-y-2">
+              <div className="space-y-1">
                 {dayEvents.length === 0 && (
                   <p className="py-2 text-sm text-muted-foreground">No appointments</p>
                 )}
@@ -56,8 +66,8 @@ const ScheduleView = ({
                   <button
                     key={event.id}
                     type="button"
-                    className="flex w-full items-center gap-3 rounded-md border p-3 text-left transition hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30"
-                    onClick={() => onEventSelect(event)}
+                    className="flex w-full items-center gap-3 rounded-md border px-3 py-2 text-left transition hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30"
+                    onClick={(clickEvent) => onEventSelect(event, clickEvent.currentTarget)}
                   >
                     <span
                       className={cn(

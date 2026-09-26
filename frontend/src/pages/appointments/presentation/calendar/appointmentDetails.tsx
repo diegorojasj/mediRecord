@@ -12,8 +12,29 @@ import {
   statusStyle,
 } from './calendar_functions';
 import type { CalendarEvent } from './calendar_types';
+import { anchoredPanelLayout, useAnchoredPanel } from './useAnchoredPanel';
 
-const AppointmentDetails = ({ options, event, onEdit, onDelete, onClose }: { options: AppointmentOptions, event: CalendarEvent; onEdit: (event: CalendarEvent) => void; onDelete: (event: CalendarEvent) => Promise<void>; onClose: () => void }) => {
+const AppointmentDetails = ({
+  options,
+  event,
+  anchor,
+  onEdit,
+  onDelete,
+  onClose,
+}: {
+  options: AppointmentOptions;
+  event: CalendarEvent;
+  // The clicked appointment; without it (e.g. opened from the history) the panel uses a fixed spot
+  anchor: HTMLElement | null;
+  onEdit: (event: CalendarEvent) => void;
+  onDelete: (event: CalendarEvent) => Promise<void>;
+  onClose: () => void;
+}) => {
+  const { panelRef, ...placement } = useAnchoredPanel(anchor, onClose);
+  const layout = anchoredPanelLayout(placement, {
+    width: 'w-[22rem]',
+    fallback: 'absolute right-4 top-20 max-h-[calc(100%-6rem)]',
+  });
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -31,7 +52,13 @@ const AppointmentDetails = ({ options, event, onEdit, onDelete, onClose }: { opt
   };
 
   return (
-    <div className="absolute inset-x-3 top-24 z-30 max-h-[calc(100%-7rem)] overflow-auto rounded-md border bg-popover p-4 text-popover-foreground shadow-xl sm:left-auto sm:right-4 sm:top-20 sm:w-[22rem]">
+    <div
+      ref={panelRef}
+      role="dialog"
+      aria-label="Appointment details"
+      className={cn('z-40 overflow-auto border bg-popover p-4 text-popover-foreground shadow-xl', layout.className)}
+      style={layout.style}
+    >
       <div className="mb-3 flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2">

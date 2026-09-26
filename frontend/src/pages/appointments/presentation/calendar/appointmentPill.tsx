@@ -10,7 +10,7 @@ const AppointmentPill = ({
 }: {
   compact?: boolean;
   event: CalendarEvent;
-  onSelect: (event: CalendarEvent) => void;
+  onSelect: (event: CalendarEvent, anchor: HTMLElement) => void;
 }) => {
   const style = statusStyle(event.status);
 
@@ -24,7 +24,7 @@ const AppointmentPill = ({
         event.status === 'cancelled' && 'opacity-70 line-through',
         style.event,
       )}
-      onClick={() => onSelect(event)}
+      onClick={(clickEvent) => onSelect(event, clickEvent.currentTarget)}
     >
       <span className="shrink-0 tabular-nums max-sm:hidden">{format(event.start, 'h:mm a')}</span>
       <span className="truncate max-sm:hidden">{event.patientName}</span>

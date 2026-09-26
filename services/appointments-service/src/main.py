@@ -65,5 +65,5 @@ async def update_appointment_root(request: Request, appointment_id: str):
 
 
 @app.delete("/{appointment_id}", response_model=Appointments | None, response_model_by_alias=False)
-async def delete_appointment_root(appointment_id: str):
-    return await delete_appointment(appointment_id)
+async def delete_appointment_root(request: Request, appointment_id: str):
+    return await delete_appointment(request, appointment_id)
