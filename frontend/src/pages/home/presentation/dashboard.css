@@ -1,0 +1,55 @@
+/* Chart tokens for the dashboard, by role. Values validated with the dataviz palette
+   validator against the card surface: categorical slots 1-5 (adjacent) and the blue ramp */
+.viz-root {
+  --viz-surface: #ffffff;
+  --viz-grid: #ebebea;
+  --viz-axis: #c3c2b7;
+  --viz-muted: #898781;
+  --viz-hover: rgba(11, 11, 11, 0.04);
+
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --series-5: #e87ba4;
+
+  /* Sequential blue (heatmap bins) */
+  --seq-1: #86b6ef;
+  --seq-2: #5598e7;
+  --seq-3: #2a78d6;
+  --seq-4: #1c5cab;
+  --seq-5: #0d366b;
+
+  /* Meter: fill and a lighter step of the same ramp for the track */
+  --meter-fill: #2a78d6;
+  --meter-track: #deebfc;
+
+  --delta-good: #006300;
+  --delta-bad: #b42323;
+}
+
+.dark .viz-root {
+  --viz-surface: #171717;
+  --viz-grid: #2c2c2a;
+  --viz-axis: #383835;
+  --viz-muted: #898781;
+  --viz-hover: rgba(255, 255, 255, 0.05);
+
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-4: #c98500;
+  --series-5: #d55181;
+
+  --seq-1: #184f95;
+  --seq-2: #256abf;
+  --seq-3: #3987e5;
+  --seq-4: #6da7ec;
+  --seq-5: #b7d3f6;
+
+  --meter-fill: #3987e5;
+  --meter-track: #1b2f4a;
+
+  --delta-good: #0ca30c;
+  --delta-bad: #e66767;
+}
