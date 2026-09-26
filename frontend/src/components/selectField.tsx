@@ -15,6 +15,7 @@ export function SelectField({
   options,
   value,
   onChange,
+  disabled,
 }: {
   id: string;
   label: string;
@@ -22,11 +23,12 @@ export function SelectField({
   options: { value: string; label: string }[];
   value: string;
   onChange: (v: string) => void;
+  disabled?: boolean;
 }) {
   return (
     <Field>
       <Label htmlFor={id}>{label}</Label>
-      <Select value={value} onValueChange={onChange}>
+      <Select value={value} onValueChange={onChange} disabled={disabled}>
         <SelectTrigger id={id}>
           <SelectValue placeholder={placeholder ?? `Select ${label.toLowerCase()}`} />
         </SelectTrigger>
