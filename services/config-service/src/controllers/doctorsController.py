@@ -1,11 +1,14 @@
 from fastapi import HTTPException, Request
 from pydantic import ValidationError
+from pymongo.asynchronous.database import AsyncDatabase
 from pymongo.errors import DuplicateKeyError
 
 from ..models.doctor import Doctor
 
 READ_ONLY_FIELDS = {"id", "revision_id", "created_at", "updated_at", "deleted_at"}
 DUPLICATE_REGISTRATION = "A doctor with this professional registration number already exists"
+# Appointments live in the appointments service's collection of the shared database
+APPOINTMENTS_COLLECTION = "appointments"
 
 
 async def _get_or_404(id: str) -> Doctor:
@@ -54,7 +57,21 @@ async def update_doctor(request: Request, id: str) -> Doctor:
     return doctor
 
 
-async def delete_doctor(id: str) -> Doctor:
+async def _ensure_doctor_can_be_deleted(db: AsyncDatabase, doctor: Doctor) -> None:
+    """Doctors with appointments (past or upcoming) are part of the history: they are deactivated, not deleted."""
+    appointment = await db[APPOINTMENTS_COLLECTION].find_one(
+        {"doctor_id": doctor.id, "deleted_at": None},
+        {"_id": 1},
+    )
+    if appointment is not None:
+        raise HTTPException(
+            status_code=409,
+            detail="The doctor has appointments and can't be deleted, change their status instead",
+        )
+
+
+async def delete_doctor(request: Request, id: str) -> Doctor:
     doctor = await _get_or_404(id)
+    await _ensure_doctor_can_be_deleted(request.app.state.db, doctor)
     await doctor.soft_delete()
     return doctor

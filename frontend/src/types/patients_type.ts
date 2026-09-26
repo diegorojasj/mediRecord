@@ -58,4 +58,6 @@ export type Patient = {
   health_insurance?: HealthInsurance;
   administrative_notes?: string;
   is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
 };

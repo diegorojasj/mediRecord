@@ -74,5 +74,5 @@ async def update_patient_root(request: Request, patient_id: str):
     return await update_patient(request, patient_id)
 
 @app.delete("/{patient_id}", response_model=Patient | None, response_model_by_alias=False)
-async def delete_patient_root(patient_id: str):
-    return await delete_patient(patient_id)
+async def delete_patient_root(request: Request, patient_id: str):
+    return await delete_patient(request, patient_id)
