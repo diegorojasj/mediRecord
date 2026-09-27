@@ -5,9 +5,10 @@ from beanie import init_beanie
 from fastapi import FastAPI
 from pymongo import AsyncMongoClient
 
+from ..models.business import BusinessProfile
 from ..models.doctor import Doctor
 
-ALL_MODELS = [Doctor]
+ALL_MODELS = [Doctor, BusinessProfile]
 
 
 def connection_string() -> str:

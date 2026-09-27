@@ -1,3 +1,6 @@
+// Shown wherever the clinic has not set its own name in Configuration > Business
+export const APP_NAME = 'mediRecord';
+
 export const AVATAR_PALETTE = [
   'bg-blue-100 text-blue-700',
   'bg-violet-100 text-violet-700',

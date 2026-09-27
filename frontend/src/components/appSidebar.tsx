@@ -4,10 +4,11 @@ import {
   Configuration01Icon,
   DashboardSquare01Icon,
   Invoice01Icon,
-  UserIcon
+  UserIcon,
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Link } from '@tanstack/react-router';
+import { useBusinessStore, useClinicName } from '@/stores/business_store';
 import {
   Sidebar,
   SidebarContent,
@@ -45,11 +46,14 @@ const navItems = [
   {
     label: 'Config',
     to: '/config',
-    icon: Configuration01Icon
-  }
+    icon: Configuration01Icon,
+  },
 ];
 
 const AppSideBar = () => {
+  const logo = useBusinessStore((s) => s.profile?.logo);
+  const clinicName = useClinicName();
+
   return (
     <Sidebar collapsible="icon" variant="inset">
       <SidebarHeader>
@@ -57,10 +61,18 @@ const AppSideBar = () => {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link to="/">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                  <HugeiconsIcon icon={Activity01Icon} size={16} />
-                </div>
-                <span className="font-semibold">MediRecord</span>
+                {logo ? (
+                  <img
+                    src={logo}
+                    alt=""
+                    className="aspect-square size-8 shrink-0 rounded-lg object-contain"
+                  />
+                ) : (
+                  <div className="flex aspect-square size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                    <HugeiconsIcon icon={Activity01Icon} size={16} />
+                  </div>
+                )}
+                <span className="truncate font-semibold">{clinicName}</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

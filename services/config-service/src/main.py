@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 
+from .controllers.businessController import get_business_profile, save_business_profile
 from .controllers.constantsController import (
     get_constants_doctor_specialty,
     get_constants_doctor_status,
@@ -14,6 +15,7 @@ from .controllers.doctorsController import (
     update_doctor,
 )
 from .core.database import init_db
+from .models.business import BusinessProfile
 from .models.doctor import Doctor
 
 
@@ -67,3 +69,14 @@ async def update_doctor_root(request: Request, doctor_id: str):
 @app.delete("/doctors/{doctor_id}", response_model=Doctor | None, response_model_by_alias=False)
 async def delete_doctor_root(request: Request, doctor_id: str):
     return await delete_doctor(request, doctor_id)
+
+
+# business profile (single document)
+@app.get("/business", response_model=BusinessProfile | None, response_model_by_alias=False)
+async def get_business_root():
+    return await get_business_profile()
+
+
+@app.put("/business", response_model=BusinessProfile, response_model_by_alias=False)
+async def save_business_root(request: Request):
+    return await save_business_profile(request)

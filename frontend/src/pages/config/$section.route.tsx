@@ -1,6 +1,6 @@
 import { createFileRoute, notFound } from '@tanstack/react-router';
 
-const KNOWN_SECTIONS = ['doctors'];
+const KNOWN_SECTIONS = ['business', 'doctors'];
 
 export const Route = createFileRoute('/config/$section')({
   beforeLoad: ({ params }) => {

@@ -62,3 +62,12 @@ async def get_config_consts_doctor_specialty(request: Request):
 
 async def get_config_consts_doctor_status(request: Request):
     return await _forward_to_config(request, "GET", "/doctor-status")
+
+
+async def get_business_profile(request: Request):
+    return await _forward_to_config(request, "GET", "/business")
+
+
+async def save_business_profile(request: Request):
+    json_data = await request.json()
+    return await _forward_to_config(request, "PUT", "/business", json_data=json_data)

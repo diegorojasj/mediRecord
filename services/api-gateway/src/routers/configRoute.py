@@ -6,7 +6,9 @@ from ..controllers.configController import (
     get_config_consts_doctor_specialty,
     get_config_consts_doctor_status,
     get_config_consts_week_days,
+    get_business_profile,
     get_doctors,
+    save_business_profile,
     update_doctor,
 )
 
@@ -53,3 +55,14 @@ async def update_doctor_root(request: Request, doctor_id: str):
 @router.delete("/doctors/{doctor_id}")
 async def delete_doctor_root(request: Request, doctor_id: str):
     return await delete_doctor(request, doctor_id)
+
+
+# business profile
+@router.get("/business")
+async def get_business_root(request: Request):
+    return await get_business_profile(request)
+
+
+@router.put("/business")
+async def save_business_root(request: Request):
+    return await save_business_profile(request)

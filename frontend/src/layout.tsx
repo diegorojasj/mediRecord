@@ -1,8 +1,20 @@
-import type { ReactNode } from 'react';
+import { type ReactNode, useEffect } from 'react';
 import AppSideBar from './components/appSidebar';
 import { SidebarInset, SidebarTrigger } from './components/ui/sidebar';
+import { useBusinessStore, useClinicName } from './stores/business_store';
 
 const Layout = ({ children }: { children: ReactNode }) => {
+  const loadBusiness = useBusinessStore((s) => s.load);
+  const clinicName = useClinicName();
+
+  useEffect(() => {
+    loadBusiness();
+  }, [loadBusiness]);
+
+  useEffect(() => {
+    document.title = clinicName;
+  }, [clinicName]);
+
   return (
     <>
       <AppSideBar />

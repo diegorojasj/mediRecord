@@ -1,10 +1,15 @@
-import { ManagerIcon } from '@hugeicons/core-free-icons';
+import { Hospital01Icon, ManagerIcon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Link } from '@tanstack/react-router';
 import H4 from '@/components/h4';
 import { Card } from '@/components/ui/card';
 
 const configSections = [
+  {
+    icon: Hospital01Icon,
+    label: 'Business',
+    to: 'business',
+  },
   {
     icon: ManagerIcon,
     label: 'Doctors',
