@@ -18,9 +18,9 @@ export function ChartCard({
   // Anchor the "In short" sentences link to
   id?: string;
   title: string;
-  // How to read the chart, in one plain sentence
+  // Only a caveat that changes how the numbers read (what's excluded), kept short
   subtitle?: string;
-  // What the chart shows, said in words, so nobody has to decode it
+  // The result the chart shows, in a few words
   takeaway?: string;
   legend?: ReactNode;
   table?: TableView;
@@ -100,11 +100,12 @@ function DataTable({ table }: { table: TableView }) {
 }
 
 // Legend swatches mirror the mark: a rounded rect for bars
-export function Legend({ items }: { items: { label: string; color: string; value?: string }[] }) {
+// A hint (what the label means) shows on hover instead of taking space on the card
+export function Legend({ items }: { items: { label: string; color: string; value?: string; hint?: string }[] }) {
   return (
     <ul className="m-0 flex list-none flex-wrap gap-x-4 gap-y-1 p-0 text-xs">
       {items.map((item) => (
-        <li key={item.label} className="flex items-center gap-1.5 text-muted-foreground">
+        <li key={item.label} title={item.hint} className={cn('flex items-center gap-1.5 text-muted-foreground', item.hint && 'cursor-help')}>
           <span className="size-2.5 shrink-0 rounded-sm" style={{ background: item.color }} />
           <span>{item.label}</span>
           {item.value && <span className="font-medium text-foreground">{item.value}</span>}

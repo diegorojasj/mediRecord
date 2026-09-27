@@ -22,6 +22,7 @@ import type { Currency, Invoice } from '@/types/billing_type';
 import type { Doctor } from '@/types/doctors_type';
 import type { Patient } from '@/types/patients_type';
 import { WEEK_STARTS_ON } from '@/pages/appointments/presentation/calendar/calendar_constants';
+import { hourLabel } from '@/pages/appointments/presentation/calendar/calendar_functions';
 
 // ---------- dates ----------
 
@@ -213,6 +214,21 @@ export function busiestTimes(appointments: Appointment[]): Heatmap {
   const counts = HEATMAP_WEEKDAYS.map(() => hours.map(() => 0));
   for (const d of kept) counts[d.getDay()][d.getHours() - first] += 1;
   return { hours, counts, max: Math.max(0, ...counts.flat()) };
+}
+
+// The day-by-hour counts folded into two simple rows: totals per weekday (Monday first,
+// as the clinic's week reads) and totals per hour
+export type BusiestBar = { label: string; count: number };
+export type BusiestHour = BusiestBar & { hour: number };
+
+const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0];
+
+export function busiestDaysAndHours({ hours, counts }: Heatmap): { days: (BusiestBar & { day: number })[]; hours: BusiestHour[] } {
+  return {
+    days: WEEK_ORDER.map((day) => ({ label: HEATMAP_WEEKDAYS[day], day, count: counts[day].reduce((sum, n) => sum + n, 0) })),
+    // "10am": short enough for a dozen columns on a phone
+    hours: hours.map((hour, index) => ({ label: hourLabel(hour).replace(' ', '').toLowerCase(), hour, count: counts.reduce((sum, row) => sum + row[index], 0) })),
+  };
 }
 
 // ---------- categories ----------

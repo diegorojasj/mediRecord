@@ -53,10 +53,9 @@ export function PeriodComparisonChart({
   return (
     <ChartCard
       id={id}
-      title={`How does it compare with ${previousName}?`}
-      subtitle="Each bar is all the appointments of one period. A longer bar means more appointments; the colors show what happened with them."
+      title={`Compared with ${previousName}`}
       takeaway={takeaway}
-      legend={<Legend items={OUTCOMES.map((o) => ({ label: o.label, color: o.color }))} />}
+      legend={<Legend items={OUTCOMES.map((o) => ({ label: o.label, color: o.color, hint: o.meaning }))} />}
       table={{
         columns: ['Period', ...OUTCOMES.map((o) => o.label), 'Total', 'Patients who came'],
         rows: rows.map((row) => [row.label, ...OUTCOMES.map((o) => row[o.key]), row.total, formatPercent(row.attendanceRate)]),

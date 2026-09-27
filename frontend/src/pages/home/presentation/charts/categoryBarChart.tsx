@@ -114,7 +114,7 @@ export function CategoryBarChart({
       )}
       {total > 0 && hidden.length > 0 && (
         <p className="mt-2 text-[11px] text-muted-foreground">
-          Showing the top {shown.length}. The other {hidden.length} have {hiddenTotal} {valueLabel.toLowerCase()} ({share(hiddenTotal)}) — press “See numbers” for the full list.
+          Top {shown.length} shown · {hidden.length} more ({share(hiddenTotal)}) in “See numbers”
         </p>
       )}
     </ChartCard>

@@ -1,5 +1,5 @@
 import { format } from 'date-fns';
-import { ArrowDown, RefreshCw } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn, type SelectOption } from '@/lib/utils';
@@ -7,7 +7,7 @@ import type { Appointment } from '@/types/appointments_type';
 import type { Invoice } from '@/types/billing_type';
 import type { Doctor } from '@/types/doctors_type';
 import type { Patient } from '@/types/patients_type';
-import { BusiestTimesHeatmap } from './charts/busiestTimesHeatmap';
+import { BusiestTimesChart } from './charts/busiestTimesChart';
 import { CategoryBarChart } from './charts/categoryBarChart';
 import { CollectionMeters } from './charts/collectionMeters';
 import { OutcomeTrendChart } from './charts/outcomeTrendChart';
@@ -43,7 +43,7 @@ import {
   comparisonTakeaway,
   insuranceTakeaway,
   patientsSeenTakeaway,
-  summarySentences,
+  summaryStats,
   topCategoryTakeaway,
 } from './home_insights';
 
@@ -63,13 +63,10 @@ export type DashboardOptions = {
 // index.css styles h1/h2 globally (unlayered), so headings need the ! overrides
 const SECTION_HEADING = '!m-0 !font-sans !text-base !font-semibold !leading-snug !tracking-normal !text-foreground';
 
-function Section({ title, description, children }: { title: string; description: string; children: ReactNode }) {
+function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="flex flex-col gap-3">
-      <div>
-        <h2 className={SECTION_HEADING}>{title}</h2>
-        <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
-      </div>
+      <h2 className={SECTION_HEADING}>{title}</h2>
       {children}
     </section>
   );
@@ -125,8 +122,8 @@ const HomePresentation = ({
 
   const sameYear = period.from.getFullYear() === period.to.getFullYear();
   const rangeLabel = `${format(period.from, sameYear ? 'MMMM d' : 'MMMM d, yyyy')} to ${format(period.to, 'MMMM d, yyyy')}`;
-  const summary = summarySentences({
-    period,
+  const summary = summaryStats({
+    previousName: period.previousName,
     metrics,
     previous: previousMetrics,
     totals,
@@ -139,7 +136,6 @@ const HomePresentation = ({
       <header className="flex items-center justify-between gap-3">
         <div>
           <h1 className="!m-0 !font-sans !text-xl !font-semibold !tracking-normal !text-foreground">Dashboard</h1>
-          <p className="mt-0.5 text-xs text-muted-foreground">A summary of the clinic’s appointments, money and patients.</p>
         </div>
         <Button type="button" variant="outline" size="sm" onClick={onRefresh} disabled={loading}>
           <RefreshCw className={cn('size-3.5', loading && 'animate-spin')} />
@@ -186,29 +182,36 @@ const HomePresentation = ({
             </div>
           </div>
 
-          {/* The summary in words; each sentence points to the one chart that shows it */}
-          <section className="rounded-md border bg-card p-4">
-            <h2 className={SECTION_HEADING}>In short</h2>
-            <ul className="m-0 mt-2 list-disc space-y-1.5 pl-5 text-sm text-foreground marker:text-muted-foreground">
-              {summary.map((sentence) => (
-                <li key={sentence.text}>
-                  {sentence.text}{' '}
-                  <button
-                    type="button"
-                    className="inline-flex items-center gap-0.5 whitespace-nowrap rounded px-1 text-xs text-muted-foreground underline-offset-2 transition hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30"
-                    onClick={() => scrollToChart(sentence.chart.id)}
-                  >
-                    <ArrowDown className="size-3" aria-hidden />
-                    See chart
-                    <span className="sr-only">: {sentence.chart.name}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
+          {/* Headline results; each tile jumps to the one chart that shows it */}
+          <section aria-label="In short" className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            {summary.map((stat) => (
+              <button
+                key={stat.label}
+                type="button"
+                onClick={() => scrollToChart(stat.chart.id)}
+                className="flex min-w-0 flex-col rounded-md border bg-card px-3 py-2.5 text-left transition hover:border-foreground/30 hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30"
+              >
+                <span className="truncate text-xs text-muted-foreground">{stat.label}</span>
+                <span
+                  className={cn(
+                    'mt-1 truncate text-xl font-semibold leading-tight tabular-nums',
+                    stat.trend === 'up'
+                      ? 'text-emerald-600 dark:text-emerald-400'
+                      : stat.trend === 'down'
+                        ? 'text-rose-600 dark:text-rose-400'
+                        : 'text-foreground',
+                  )}
+                >
+                  {stat.value}
+                </span>
+                {stat.detail && <span className="mt-0.5 truncate text-[11px] text-muted-foreground">{stat.detail}</span>}
+                <span className="sr-only">. See chart: {stat.chart.name}</span>
+              </button>
+            ))}
           </section>
         </div>
 
-        <Section title="Appointments" description="How many appointments there were, what happened with them, and when patients come.">
+        <Section title="Appointments">
           <OutcomeTrendChart
             id={CHARTS.outcomes.id}
             rows={trend}
@@ -225,18 +228,16 @@ const HomePresentation = ({
               previousName={period.previousName}
               takeaway={comparisonTakeaway(metrics, previousMetrics, period.previousName)}
             />
-            <BusiestTimesHeatmap id={CHARTS.busiest.id} heatmap={heatmap} takeaway={busiestTimeTakeaway(heatmap)} />
+            <BusiestTimesChart id={CHARTS.busiest.id} heatmap={heatmap} takeaway={busiestTimeTakeaway(heatmap)} />
             <CategoryBarChart
-              title="What kind of appointments were they?"
-              subtitle="Each bar is a type of appointment. The longer the bar, the more appointments of that type."
-              takeaway={topCategoryTakeaway(types, 'appointment')}
+              title="Appointment types"
+              takeaway={topCategoryTakeaway(types)}
               rows={types}
               valueLabel="Appointments"
             />
             <CategoryBarChart
-              title="Which specialties had the most appointments?"
-              subtitle="Appointments grouped by the specialty of the doctor who attended them."
-              takeaway={topCategoryTakeaway(specialties, 'appointment', 'Most requested')}
+              title="By specialty"
+              takeaway={topCategoryTakeaway(specialties, 'Most requested')}
               rows={specialties}
               valueLabel="Appointments"
               labelWidth={170}
@@ -245,13 +246,13 @@ const HomePresentation = ({
           </div>
         </Section>
 
-        <Section title="Money" description="What was billed in this period, how much has been paid and how patients pay.">
+        <Section title="Money">
           <div className="grid gap-4 lg:grid-cols-2">
             <CollectionMeters id={CHARTS.collection.id} totals={totals} takeaway={collectionTakeaway(totals)} />
             <CategoryBarChart
-              title="How do patients pay?"
-              subtitle="Invoices by payment method. Cancelled (voided) invoices are not counted."
-              takeaway={topCategoryTakeaway(methods, 'invoice', 'Most used')}
+              title="Payment methods"
+              subtitle="Voided invoices excluded"
+              takeaway={topCategoryTakeaway(methods, 'Most used')}
               rows={methods}
               valueLabel="Invoices"
               emptyMessage="No invoices in this period"
@@ -259,7 +260,7 @@ const HomePresentation = ({
           </div>
         </Section>
 
-        <Section title="Patients" description="Who the patients seen in this period are: everyone with an appointment that wasn't cancelled.">
+        <Section title="Patients seen">
           <div className="grid gap-4 lg:grid-cols-2">
             <PatientsSeenMeter
               id={CHARTS.patientsSeen.id}
@@ -267,25 +268,22 @@ const HomePresentation = ({
               takeaway={patientsSeenTakeaway(patientsSeen)}
             />
             <CategoryBarChart
-              title="How old are they?"
-              subtitle="Patients by age group, in years."
+              title="Age (years)"
               takeaway={ageTakeaway(ages)}
               rows={ages}
               valueLabel="Patients"
               orientation="vertical"
             />
             <CategoryBarChart
-              title="Do they have health insurance?"
-              subtitle="Patients by type of health insurance."
+              title="Health insurance"
               takeaway={insuranceTakeaway(insurance)}
               rows={insurance}
               valueLabel="Patients"
               labelWidth={100}
             />
             <CategoryBarChart
-              title="Men and women"
-              subtitle="Patients by sex."
-              takeaway={topCategoryTakeaway(sexes, 'patient', 'Most patients')}
+              title="Sex"
+              takeaway={topCategoryTakeaway(sexes, 'Most patients')}
               rows={sexes}
               valueLabel="Patients"
               labelWidth={80}

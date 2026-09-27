@@ -1,5 +1,5 @@
 import { formatMoney } from '@/pages/billing/presentation/billing_functions';
-import { formatAmount, formatPercent, type CurrencyTotals } from '../home_functions';
+import { type CurrencyTotals, formatAmount, formatPercent } from '../home_functions';
 import { ChartCard } from './chartParts';
 
 // Collected against invoiced, one meter per currency: amounts in BOB and USD are never added
@@ -7,8 +7,8 @@ export function CollectionMeters({ id, totals, takeaway }: { id: string; totals:
   return (
     <ChartCard
       id={id}
-      title="How much of what we billed has been paid?"
-      subtitle="The filled part of each bar is the money already received. Cancelled (voided) invoices are not counted. Bolivianos and dollars are shown apart."
+      title="Billed vs. received"
+      subtitle="Voided invoices excluded"
       takeaway={takeaway}
       table={{
         columns: ['Currency', 'Invoices', 'Billed', 'Received', 'Still owed', 'Paid'],

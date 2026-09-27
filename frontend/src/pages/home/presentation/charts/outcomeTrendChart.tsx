@@ -42,18 +42,12 @@ export function OutcomeTrendChart({
   return (
     <ChartCard
       id={id}
-      title={`How many appointments were there each ${bucketLabel}?`}
-      subtitle={`Each bar is one ${bucketLabel}: the taller it is, the more appointments. The colors show what happened with them.`}
+      title={`Appointments per ${bucketLabel}`}
       takeaway={takeaway}
       legend={
-        <>
-          <Legend
-            items={OUTCOMES.map((o) => ({ label: o.label, color: o.color, value: String(totals[o.key]) }))}
-          />
-          <p className="mt-1 text-[11px] text-muted-foreground">
-            {OUTCOMES.map((o) => `${o.label}: ${o.meaning}`).join(' · ')}
-          </p>
-        </>
+        <Legend
+          items={OUTCOMES.map((o) => ({ label: o.label, color: o.color, value: String(totals[o.key]), hint: o.meaning }))}
+        />
       }
       table={{
         columns: [bucketLabel[0].toUpperCase() + bucketLabel.slice(1), ...OUTCOMES.map((o) => o.label), 'Total'],

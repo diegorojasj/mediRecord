@@ -17,8 +17,7 @@ export function PatientsSeenMeter({
   return (
     <ChartCard
       id={id}
-      title="Were they new or had they come before?"
-      subtitle="All the different patients seen in this period. The filled part is those who came for the first time."
+      title="New or returning"
       takeaway={takeaway}
       table={{
         columns: ['Patients', 'Count', 'Share'],
