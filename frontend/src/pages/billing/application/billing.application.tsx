@@ -7,6 +7,7 @@ import {
 } from '@/lib/api/billing';
 import { getPatients } from '@/lib/api/patients';
 import BillingPresentation from '@/pages/billing/presentation/billing.presentation';
+import { useBusinessStore } from '@/stores/business_store';
 import type { Invoice } from '@/types/billing_type';
 import type { Patient } from '@/types/patients_type';
 
@@ -19,6 +20,7 @@ const BillingApplication = () => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [options, setOptions] = useState<BillingOptions | null>(null);
+  const business = useBusinessStore((s) => s.profile);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -92,6 +94,7 @@ const BillingApplication = () => {
     <BillingPresentation
       invoices={invoices}
       patients={patients}
+      business={business}
       options={options}
       loading={loading}
       error={error}

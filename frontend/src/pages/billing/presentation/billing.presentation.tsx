@@ -1,5 +1,6 @@
 import { Delete02Icon, PencilEdit01Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
+import { format } from 'date-fns';
 import { useState } from 'react';
 import { ExpandableCardList } from '@/components/expandable-card-list';
 import H4 from '@/components/h4';
@@ -10,20 +11,24 @@ import type { BillingOptions } from '@/lib/api/billing';
 import { cn } from '@/lib/utils';
 import CreationFormApplication from '@/pages/billing/application/creationForm.application';
 import type { Invoice, PaymentStatus } from '@/types/billing_type';
+import type { BusinessProfile } from '@/types/business_type';
 import type { Patient } from '@/types/patients_type';
 import {
   balanceDue,
   canDelete,
   canEdit,
-  formatDate,
   formatDateTime,
   formatMoney,
+  formatDate,
+  groupByDay,
   invoiceToFormState,
   labelFor,
+  parseApiDate,
   patientName,
 } from './billing_functions';
 import type { FormState } from './creationForm/creationForm_types';
 import DeleteDialog from './deleteDialog';
+import { PrintableInvoice } from './invoicePrint/printableInvoice';
 
 const ALL_STATUSES = 'all';
 
@@ -97,6 +102,7 @@ function ItemsTable({ invoice }: { invoice: Invoice }) {
 const BillingPresentation = ({
   invoices,
   patients,
+  business,
   options,
   loading,
   error,
@@ -110,6 +116,7 @@ const BillingPresentation = ({
 }: {
   invoices: Invoice[];
   patients: Patient[];
+  business: BusinessProfile | null;
   options: BillingOptions | null;
   loading: boolean;
   error: string | null;
@@ -150,6 +157,12 @@ const BillingPresentation = ({
     (inv) =>
       (statusFilter === ALL_STATUSES || inv.payment_status === statusFilter) && matchesSearch(inv),
   );
+  const isFiltered = filteredInvoices.length !== invoices.length;
+  const days = groupByDay(
+    filteredInvoices.toSorted(
+      (a, b) => parseApiDate(b.issue_date).getTime() - parseApiDate(a.issue_date).getTime(),
+    ),
+  );
 
   const onEdit = (invoice: Invoice) => {
     setSelectedInvoice({
@@ -167,15 +180,34 @@ const BillingPresentation = ({
   };
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="mx-auto w-full max-w-5xl space-y-4 px-4 py-6 sm:px-8">
       <H4>Billing</H4>
       <div className="flex flex-wrap gap-2">
-        <div className="flex flex-1">
+        <div className="flex w-full items-end gap-3 sm:w-auto sm:flex-1">
           <SearchInput
             placeholder="Invoice number, patient or receiver"
             value={searchQuery}
             onChange={setSearchQuery}
           />
+          {!loading && !error && (
+            <span
+              className="shrink-0 pb-2 text-xs text-muted-foreground tabular-nums"
+              aria-live="polite"
+            >
+              {isFiltered ? (
+                <>
+                  <span className="font-semibold text-foreground">{filteredInvoices.length}</span>
+                  {' / '}
+                  {invoices.length}
+                </>
+              ) : (
+                <>
+                  <span className="font-semibold text-foreground">{invoices.length}</span>
+                  {' total'}
+                </>
+              )}
+            </span>
+          )}
         </div>
         {options && (
           <div className="w-40 flex-shrink-0">
@@ -215,154 +247,177 @@ const BillingPresentation = ({
       )}
 
       {!loading && !error && (
-        <ExpandableCardList
-          items={filteredInvoices}
-          getKey={(inv) => inv.id}
-          renderRow={(inv) => (
-            <div className="flex items-center gap-3 w-full pr-2">
-              <span className="min-w-0 flex-1">
-                <span className="block text-sm font-semibold text-foreground truncate">
-                  {patientLabel(inv)}
+        <div className="space-y-5">
+          {days.map((day) => (
+            <section key={day.key} className="space-y-1.5">
+              <h3 className="flex items-baseline gap-2 border-b border-border pb-1 text-left text-xs leading-tight">
+                <span className="font-bold uppercase tracking-wide text-foreground">
+                  {format(day.date, 'EEE')}
                 </span>
-                <span className="block truncate text-xs text-muted-foreground">
-                  {inv.invoice_number} · {formatDate(inv.issue_date)}
+                <span className="text-muted-foreground tabular-nums">
+                  {format(day.date, 'dd/MM/yyyy')}
                 </span>
-              </span>
-              <span
-                className={cn(
-                  'hidden sm:block shrink-0 text-sm font-semibold tabular-nums',
-                  inv.payment_status === 'voided'
-                    ? 'text-muted-foreground line-through'
-                    : 'text-foreground',
-                )}
-              >
-                {formatMoney(inv.total, inv.currency)}
-              </span>
-              <span
-                className={cn(
-                  'shrink-0 rounded-full border px-2.5 py-0.5 text-[10px] font-semibold',
-                  STATUS_STYLE[inv.payment_status],
-                )}
-              >
-                {statusLabel(inv)}
-              </span>
-            </div>
-          )}
-          renderDetail={(inv) => (
-            <div className="relative">
-              <div className="absolute -top-1 right-0 flex gap-0.5">
-                {canEdit(inv) && (
-                  <Tooltip delayDuration={800}>
-                    <TooltipTrigger asChild>
-                      <button
-                        type="button"
-                        aria-label="Edit invoice"
-                        className="inline-flex items-center justify-center rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-                        onClick={() => onEdit(inv)}
-                      >
-                        <HugeiconsIcon icon={PencilEdit01Icon} size={12} strokeWidth={2} />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Edit</p>
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-                {canDelete(inv) && (
-                  <Tooltip delayDuration={800}>
-                    <TooltipTrigger asChild>
-                      <button
-                        type="button"
-                        aria-label="Delete invoice"
-                        className="inline-flex items-center justify-center rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-destructive transition-colors"
-                        onClick={() => onRequestDelete(inv)}
-                      >
-                        <HugeiconsIcon icon={Delete02Icon} size={12} strokeWidth={2} />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Delete</p>
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-              </div>
-              <div className="flex flex-col gap-4 pr-12 text-left text-[11px] leading-snug">
-                <div className="flex flex-wrap gap-x-10 gap-y-4">
-                  <div className="min-w-0">
-                    <SectionLabel>Receiver</SectionLabel>
-                    <DetailGrid
-                      rows={[
-                        { label: 'Name', value: inv.receiver_name },
-                        {
-                          label: inv.receiver_document_type,
-                          value: inv.receiver_document_number,
-                        },
-                        { label: 'Issued', value: formatDateTime(inv.issue_date) },
-                      ]}
-                    />
+              </h3>
+              <ExpandableCardList
+                items={day.invoices}
+                getKey={(inv) => inv.id}
+                renderRow={(inv) => (
+                  <div className="flex w-full items-center gap-3 pr-1 leading-tight">
+                    <span className="min-w-0 flex-1 truncate text-sm">
+                      <span className="font-semibold text-foreground">{patientLabel(inv)}</span>
+                      <span className="ml-2 text-xs text-muted-foreground">
+                        {inv.invoice_number} · {formatDate(inv.issue_date)}
+                      </span>
+                    </span>
+                    <span
+                      className={cn(
+                        'hidden sm:block shrink-0 text-sm font-semibold tabular-nums',
+                        inv.payment_status === 'voided'
+                          ? 'text-muted-foreground line-through'
+                          : 'text-foreground',
+                      )}
+                    >
+                      {formatMoney(inv.total, inv.currency)}
+                    </span>
+                    <span
+                      className={cn(
+                        'w-16 shrink-0 rounded-full border py-0.5 text-center text-[10px] leading-4 font-semibold',
+                        STATUS_STYLE[inv.payment_status],
+                      )}
+                    >
+                      {statusLabel(inv)}
+                    </span>
                   </div>
+                )}
+                renderDetail={(inv) => (
+                  <div className="relative">
+                    <div className="absolute -top-1 right-0 flex gap-0.5">
+                      <PrintableInvoice
+                        invoice={inv}
+                        patient={patientById.get(inv.patient_id)}
+                        business={business}
+                      />
+                      {canEdit(inv) && (
+                        <Tooltip delayDuration={800}>
+                          <TooltipTrigger asChild>
+                            <button
+                              type="button"
+                              aria-label="Edit invoice"
+                              className="inline-flex items-center justify-center rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                              onClick={() => onEdit(inv)}
+                            >
+                              <HugeiconsIcon icon={PencilEdit01Icon} size={12} strokeWidth={2} />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Edit</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
+                      {canDelete(inv) && (
+                        <Tooltip delayDuration={800}>
+                          <TooltipTrigger asChild>
+                            <button
+                              type="button"
+                              aria-label="Delete invoice"
+                              className="inline-flex items-center justify-center rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-destructive transition-colors"
+                              onClick={() => onRequestDelete(inv)}
+                            >
+                              <HugeiconsIcon icon={Delete02Icon} size={12} strokeWidth={2} />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Delete</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-4 pr-16 text-left text-[11px] leading-snug">
+                      <div className="flex flex-wrap gap-x-10 gap-y-4">
+                        <div className="min-w-0">
+                          <SectionLabel>Receiver</SectionLabel>
+                          <DetailGrid
+                            rows={[
+                              { label: 'Name', value: inv.receiver_name },
+                              {
+                                label: inv.receiver_document_type,
+                                value: inv.receiver_document_number,
+                              },
+                              { label: 'Issued', value: formatDateTime(inv.issue_date) },
+                            ]}
+                          />
+                        </div>
 
-                  <div className="min-w-0">
-                    <SectionLabel>Payment</SectionLabel>
-                    <DetailGrid
-                      rows={[
-                        { label: 'Method', value: methodLabel(inv) },
-                        { label: 'Paid', value: formatMoney(inv.amount_paid, inv.currency) },
-                        {
-                          label: 'Balance',
-                          value:
-                            inv.payment_status === 'voided'
-                              ? undefined
-                              : formatMoney(balanceDue(inv), inv.currency),
-                        },
-                        { label: 'Paid on', value: formatDateTime(inv.paid_at) },
-                        { label: 'Voided on', value: formatDateTime(inv.voided_at) },
-                        { label: 'Reason', value: inv.void_reason },
-                      ]}
-                    />
-                  </div>
+                        <div className="min-w-0">
+                          <SectionLabel>Payment</SectionLabel>
+                          <DetailGrid
+                            rows={[
+                              { label: 'Method', value: methodLabel(inv) },
+                              {
+                                label: 'Paid',
+                                value: formatMoney(inv.amount_paid, inv.currency),
+                              },
+                              {
+                                label: 'Balance',
+                                value:
+                                  inv.payment_status === 'voided'
+                                    ? undefined
+                                    : formatMoney(balanceDue(inv), inv.currency),
+                              },
+                              { label: 'Paid on', value: formatDateTime(inv.paid_at) },
+                              { label: 'Voided on', value: formatDateTime(inv.voided_at) },
+                              { label: 'Reason', value: inv.void_reason },
+                            ]}
+                          />
+                        </div>
 
-                  <div className="min-w-0">
-                    <SectionLabel>SIN</SectionLabel>
-                    <DetailGrid
-                      rows={[
-                        { label: 'Status', value: sinLabel(inv) },
-                        { label: 'CUF', value: inv.cuf },
-                      ]}
-                    />
-                  </div>
-                </div>
+                        <div className="min-w-0">
+                          <SectionLabel>SIN</SectionLabel>
+                          <DetailGrid
+                            rows={[
+                              { label: 'Status', value: sinLabel(inv) },
+                              { label: 'CUF', value: inv.cuf },
+                            ]}
+                          />
+                        </div>
+                      </div>
 
-                <div className="min-w-0">
-                  <SectionLabel>Items</SectionLabel>
-                  <ItemsTable invoice={inv} />
-                  <div className="mt-2 ml-auto w-full max-w-56 space-y-0.5">
-                    <DetailGrid
-                      rows={[
-                        { label: 'Subtotal', value: formatMoney(inv.subtotal, inv.currency) },
-                        {
-                          label: 'Discount',
-                          value:
-                            Number(inv.discount) > 0
-                              ? `- ${formatMoney(inv.discount, inv.currency)}`
-                              : undefined,
-                        },
-                        { label: 'Total', value: formatMoney(inv.total, inv.currency) },
-                      ]}
-                    />
-                  </div>
-                </div>
+                      <div className="min-w-0">
+                        <SectionLabel>Items</SectionLabel>
+                        <ItemsTable invoice={inv} />
+                        <div className="mt-2 ml-auto w-full max-w-56 space-y-0.5">
+                          <DetailGrid
+                            rows={[
+                              {
+                                label: 'Subtotal',
+                                value: formatMoney(inv.subtotal, inv.currency),
+                              },
+                              {
+                                label: 'Discount',
+                                value:
+                                  Number(inv.discount) > 0
+                                    ? `- ${formatMoney(inv.discount, inv.currency)}`
+                                    : undefined,
+                              },
+                              { label: 'Total', value: formatMoney(inv.total, inv.currency) },
+                            ]}
+                          />
+                        </div>
+                      </div>
 
-                {inv.notes && (
-                  <div className="min-w-0">
-                    <SectionLabel>Notes</SectionLabel>
-                    <p className="whitespace-pre-line text-foreground">{inv.notes}</p>
+                      {inv.notes && (
+                        <div className="min-w-0">
+                          <SectionLabel>Notes</SectionLabel>
+                          <p className="whitespace-pre-line text-foreground">{inv.notes}</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
-              </div>
-            </div>
-          )}
-        />
+              />
+            </section>
+          ))}
+        </div>
       )}
 
       <DeleteDialog

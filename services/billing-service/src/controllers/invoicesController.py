@@ -90,15 +90,16 @@ async def _ensure_appointment_not_billed(invoice: Invoice) -> None:
         )
 
 
+# "FAC-YYMM-NNNNNN": factura, issue year and month, then a sequence that restarts every year
 async def _next_invoice_number(db) -> str:
-    year = date.today().year
+    today = date.today()
     result = await db["counters"].find_one_and_update(
-        {"_id": f"invoice_number_{year}"},
+        {"_id": f"invoice_number_{today.year}"},
         {"$inc": {"seq": 1}},
         upsert=True,
         return_document=True,
     )
-    return f"INV-{year}-{result['seq']:05d}"
+    return f"FAC-{today:%y%m}-{result['seq']:06d}"
 
 
 async def _get_or_404(id: str) -> Invoice:

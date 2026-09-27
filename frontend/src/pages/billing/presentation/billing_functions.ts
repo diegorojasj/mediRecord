@@ -1,4 +1,4 @@
-import { format } from 'date-fns';
+import { format, startOfDay } from 'date-fns';
 import type { SearchSelectOption } from '@/components/searchSelectField';
 import type { SelectOption } from '@/lib/utils';
 import type { Appointment } from '@/types/appointments_type';
@@ -49,6 +49,24 @@ export const formatDate = (value?: string | null) =>
 
 export const formatDateTime = (value?: string | null) =>
   value ? format(parseApiDate(value), 'dd/MM/yyyy HH:mm') : undefined;
+
+export type InvoiceDayGroup = { key: string; date: Date; invoices: Invoice[] };
+
+// Buckets invoices by issue day (SUN–SAT headings), keeping the incoming order
+export function groupByDay(invoices: Invoice[]): InvoiceDayGroup[] {
+  const days = new Map<string, InvoiceDayGroup>();
+  for (const inv of invoices) {
+    const issued = parseApiDate(inv.issue_date);
+    const key = format(issued, 'yyyy-MM-dd');
+    let day = days.get(key);
+    if (!day) {
+      day = { key, date: startOfDay(issued), invoices: [] };
+      days.set(key, day);
+    }
+    day.invoices.push(inv);
+  }
+  return [...days.values()];
+}
 
 export function appointmentOption(a: Appointment): SearchSelectOption {
   // Appointment times are stored as clinic local time, shown as they are

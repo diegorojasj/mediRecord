@@ -14,7 +14,7 @@ from .embedded import InvoiceItem
 
 
 class Invoice(TimestampedDocument):
-    invoice_number: Annotated[str, Indexed(unique=True)]  # e.g. "INV-2026-00123", assigned by the service
+    invoice_number: Annotated[str, Indexed(unique=True)]  # e.g. "FAC-2609-000123", assigned by the service
     issue_date: datetime = Field(default_factory=utcnow)
 
     # Who and what is billed
