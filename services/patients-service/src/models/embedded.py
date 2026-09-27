@@ -1,15 +1,18 @@
-from decimal import Decimal
 from datetime import datetime
-from typing import Optional, List
+from decimal import Decimal
+from typing import List, Optional
 
 from beanie import PydanticObjectId
 from pydantic import BaseModel, Field
 
 from ..constants.global_constants import (
-    InsuranceType, DiagnosisType, DiagnosisCertainty,
-    ExamType, ExamUrgency, AdministrationRoute,
+    AdministrationRoute,
+    DiagnosisCertainty,
+    DiagnosisType,
+    ExamType,
+    ExamUrgency,
+    InsuranceType,
 )
-
 
 
 # ---------------------------------------------------------------------------
@@ -22,7 +25,7 @@ class Address(BaseModel):
     city: str
     state_province: str
     reference: Optional[str] = None
-    country: str = "Bolivia"
+    country: str = ""
 
 
 class EmergencyContact(BaseModel):
@@ -41,7 +44,7 @@ class HealthInsurance(BaseModel):
 # Medical History
 # ---------------------------------------------------------------------------
 class PatientHabits(BaseModel):
-    tobacco: Optional[str] = None          # e.g. "10 cigarettes/day x 5 years"
+    tobacco: Optional[str] = None  # e.g. "10 cigarettes/day x 5 years"
     alcohol: Optional[str] = None
     drugs: Optional[str] = None
     physical_activity: Optional[str] = None
@@ -49,10 +52,10 @@ class PatientHabits(BaseModel):
 
 
 class MedicalHistory(BaseModel):
-    pathological: Optional[str] = None            # past diseases
-    surgical: Optional[str] = None                # past surgeries
-    family: Optional[str] = None                  # family history
-    gyneco_obstetric: Optional[str] = None         # G/P, LMP, etc.
+    pathological: Optional[str] = None  # past diseases
+    surgical: Optional[str] = None  # past surgeries
+    family: Optional[str] = None  # family history
+    gyneco_obstetric: Optional[str] = None  # G/P, LMP, etc.
     allergies: List[str] = Field(default_factory=list)
     current_medications: List[str] = Field(default_factory=list)
     habits: Optional[PatientHabits] = None
@@ -67,6 +70,7 @@ class VitalSigns(BaseModel):
 
     Units are fixed: mmHg, bpm, rpm, °C, %, kg, cm, mg/dL.
     """
+
     systolic_blood_pressure: Optional[int] = Field(None, ge=40, le=300)
     diastolic_blood_pressure: Optional[int] = Field(None, ge=20, le=200)
     heart_rate: Optional[int] = Field(None, ge=20, le=300)
@@ -99,7 +103,7 @@ class PhysicalExam(BaseModel):
 # Diagnoses (ICD-10 coded)
 # ---------------------------------------------------------------------------
 class Diagnosis(BaseModel):
-    icd10_code: str                         # e.g. "I21.9"
+    icd10_code: str  # e.g. "I21.9"
     description: str
     type: DiagnosisType = "primary"
     certainty: DiagnosisCertainty = "presumptive"
@@ -119,7 +123,7 @@ class ExamResult(BaseModel):
     type: ExamType
     description: str
     result_date: datetime
-    file_url: Optional[str] = None          # S3/Lightsail bucket link
+    file_url: Optional[str] = None  # S3/Lightsail bucket link
     observations: Optional[str] = None
     uploaded_by_id: Optional[PydanticObjectId] = None
 
@@ -129,15 +133,16 @@ class ExamResult(BaseModel):
 # ---------------------------------------------------------------------------
 class PrescribedMedication(BaseModel):
     """RM 0479 compliance: generic_name is REQUIRED."""
-    generic_name: str                        # INN required
+
+    generic_name: str  # INN required
     brand_name: Optional[str] = None
-    concentration: str                       # "500mg", "10mg/ml"
-    pharmaceutical_form: str                 # "tablet", "syrup"
+    concentration: str  # "500mg", "10mg/ml"
+    pharmaceutical_form: str  # "tablet", "syrup"
     administration_route: AdministrationRoute
-    dose: str                                # "1 tablet"
-    frequency: str                           # "every 8 hours"
-    duration: str                            # "7 days"
-    total_quantity: str                      # "21 tablets"
+    dose: str  # "1 tablet"
+    frequency: str  # "every 8 hours"
+    duration: str  # "7 days"
+    total_quantity: str  # "21 tablets"
     special_instructions: Optional[str] = None
 
 
@@ -145,9 +150,9 @@ class PrescribedMedication(BaseModel):
 # Invoice line items
 # ---------------------------------------------------------------------------
 class InvoiceItem(BaseModel):
-    description: str                         # "General medical consultation"
+    description: str  # "General medical consultation"
     quantity: Decimal = Decimal("1")
-    unit_price: Decimal                      # Bs
-    subtotal: Decimal                        # quantity * unit_price
-    sin_service_code: Optional[str] = None   # SIN product/service code
-    unit_of_measure: Optional[str] = None    # SIN-defined, e.g. "58" (service)
+    unit_price: Decimal  # Bs
+    subtotal: Decimal  # quantity * unit_price
+    sin_service_code: Optional[str] = None  # SIN product/service code
+    unit_of_measure: Optional[str] = None  # SIN-defined, e.g. "58" (service)

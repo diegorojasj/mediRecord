@@ -18,7 +18,6 @@ class Patient(TimestampedDocument):
     national_id_issued_in: str
     tax_id: Optional[str] = None  # optional, for billing
 
-    # Names (Bolivian pattern: two apellidos common)
     first_name: str
     first_surname: str
     second_surname: Optional[str] = None
